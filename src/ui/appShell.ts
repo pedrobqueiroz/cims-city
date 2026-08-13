@@ -174,9 +174,16 @@ export function createAppShell(root: HTMLElement, entities: readonly Neighborhoo
     explorerToggle.setAttribute('aria-expanded', String(expanded));
   };
 
+  const syncCompactOverlays = (): void => {
+    legendDisclosure.hidden = compactLayout && detailExpanded && Boolean(currentViewModel.selected);
+  };
+
   const onCompactLayoutChange = (event: MediaQueryListEvent): void => {
+    const focusWasInNavigator = navigator.contains(document.activeElement);
     compactLayout = event.matches;
     setExplorerExpanded(!compactLayout);
+    syncCompactOverlays();
+    if (compactLayout && focusWasInNavigator) explorerToggle.focus();
   };
   compactMedia?.addEventListener?.('change', onCompactLayoutChange);
 
@@ -267,7 +274,12 @@ export function createAppShell(root: HTMLElement, entities: readonly Neighborhoo
     card.hidden = !expanded || !currentViewModel.selected;
     detailToggle.setAttribute('aria-expanded', String(expanded));
     detailToggle.textContent = expanded ? 'Hide Selected Details' : 'Show Selected Details';
+    syncCompactOverlays();
     options.onDetailDisclosureChange?.(expanded);
+  };
+
+  const focusOpenDetail = (): void => {
+    card.querySelector<HTMLButtonElement>('[data-detail-dismiss]')?.focus();
   };
 
   const render = (state: NeighborhoodState, viewModel: AtlasViewModel): void => {
@@ -278,7 +290,8 @@ export function createAppShell(root: HTMLElement, entities: readonly Neighborhoo
       if (state.selectedId && compactLayout) setExplorerExpanded(false);
     }
     renderBreadcrumbs(viewModel); renderNavigator(viewModel); renderDetail(viewModel);
-    if (selectionChanged && state.selectedId && compactLayout) detailToggle.focus();
+    syncCompactOverlays();
+    if (selectionChanged && state.selectedId && compactLayout) focusOpenDetail();
     backButton.disabled = state.scopeId === 'sei' && !state.selectedId;
     if (state.selectedId) overviewButton.removeAttribute('aria-current');
     else overviewButton.setAttribute('aria-current', 'true');
@@ -311,7 +324,8 @@ export function createAppShell(root: HTMLElement, entities: readonly Neighborhoo
       if (compactLayout) setExplorerExpanded(false);
       detailExpanded = true;
       renderDetail(currentViewModel);
-      if (compactLayout) detailToggle.focus();
+      syncCompactOverlays();
+      if (compactLayout) focusOpenDetail();
       return;
     }
     overviewButton.setAttribute('aria-current', 'true');
@@ -322,6 +336,7 @@ export function createAppShell(root: HTMLElement, entities: readonly Neighborhoo
       textElement('h2', 'Overview'),
       textElement('p', 'Explore the SEi institutional atlas with the organization navigator.'),
     );
+    syncCompactOverlays();
   };
 
   const setReducedMotion = (reduced: boolean): void => {
@@ -390,7 +405,11 @@ export function createAppShell(root: HTMLElement, entities: readonly Neighborhoo
   overviewButton.addEventListener('click', options.onOverview);
   retryButton.addEventListener('click', () => options.onRetry?.());
   reducedMotionButton.addEventListener('click', () => { setReducedMotion(!reducedMotion); options.onReducedMotionChange?.(reducedMotion); });
-  detailToggle.addEventListener('click', () => setDetailExpanded(!detailExpanded));
+  detailToggle.addEventListener('click', () => {
+    const expanding = !detailExpanded;
+    setDetailExpanded(expanding);
+    if (expanding && compactLayout) focusOpenDetail();
+  });
   legendButton.addEventListener('click', () => {
     legendExpanded = !legendExpanded; legend.hidden = !legendExpanded;
     legendButton.setAttribute('aria-expanded', String(legendExpanded)); options.onLegendDisclosureChange?.(legendExpanded);

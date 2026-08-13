@@ -70,7 +70,8 @@ describe('createAppShell', () => {
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     expect(shell.navigator.hidden).toBe(true);
     expect(shell.card.hidden).toBe(false);
-    expect(document.activeElement).toBe(root.querySelector('[data-detail-toggle]'));
+    expect(document.activeElement).toBe(shell.card.querySelector('[data-detail-dismiss]'));
+    expect(shell.card.contains(document.activeElement)).toBe(true);
   });
 
   it('updates the explorer disclosure across live compact-layout transitions and removes the listener once', () => {
@@ -80,9 +81,12 @@ describe('createAppShell', () => {
     const toggle = root.querySelector<HTMLButtonElement>('[data-explorer-toggle]')!;
 
     expect(shell.navigator.hidden).toBe(false);
+    const focusedEntity = root.querySelector<HTMLButtonElement>('[data-entity-id=cims-hub]')!;
+    focusedEntity.focus();
     media.dispatch(true);
     expect(shell.navigator.hidden).toBe(true);
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(toggle);
     media.dispatch(false);
     expect(shell.navigator.hidden).toBe(false);
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
@@ -169,6 +173,30 @@ describe('createAppShell', () => {
     expect(root.querySelector<HTMLElement>('[data-legend]')!.hidden).toBe(false);
     expect(options.onDetailDisclosureChange).toHaveBeenLastCalledWith(true);
     expect(options.onLegendDisclosureChange).toHaveBeenCalledWith(true);
+  });
+
+  it('keeps the compact legend out of the open detail sheet geometry and restores access after collapse', () => {
+    const media = createCompactMedia(true);
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue(media));
+    const { root, shell } = mount();
+    shell.setSelected('smart-textiles');
+    const legendDisclosure = root.querySelector<HTMLElement>('.route-legend')!;
+    const legendToggle = root.querySelector<HTMLButtonElement>('[data-legend-toggle]')!;
+
+    expect(shell.card.hidden).toBe(false);
+    expect(legendDisclosure.hidden).toBe(true);
+    expect(legendDisclosure.hasAttribute('hidden')).toBe(true);
+
+    root.querySelector<HTMLButtonElement>('[data-detail-dismiss]')!.click();
+    expect(shell.card.hidden).toBe(true);
+    expect(legendDisclosure.hidden).toBe(false);
+    legendToggle.click();
+    expect(root.querySelector<HTMLElement>('[data-legend]')!.hidden).toBe(false);
+
+    root.querySelector<HTMLButtonElement>('[data-detail-toggle]')!.click();
+    expect(shell.card.hidden).toBe(false);
+    expect(legendDisclosure.hidden).toBe(true);
+    expect(document.activeElement).toBe(shell.card.querySelector('[data-detail-dismiss]'));
   });
 
   it('renders loading, ready, failed, and Retry states truthfully', () => {

@@ -128,7 +128,7 @@ function relationshipGroups(
   relationships: readonly RelationshipItem[],
   entitiesById: ReadonlyMap<string, NeighborhoodEntity>,
 ): RelationshipGroup[] {
-  return ROUTE_LEGEND_COPY.flatMap(({ kind }) => {
+  return ROUTE_LEGEND_COPY.flatMap(({ kind, label }) => {
     const items = relationships
       .filter((relationship) => relationship.kind === kind
         && (relationship.sourceId === entityId || relationship.targetId === entityId))
@@ -142,7 +142,7 @@ function relationshipGroups(
           text: `${outgoing ? RELATIONSHIP_LABELS[kind] : INVERSE_RELATIONSHIP_LABELS[kind]} — ${relatedName}`,
         };
       });
-    return items.length > 0 ? [{ kind, label: RELATIONSHIP_LABELS[kind], items }] : [];
+    return items.length > 0 ? [{ kind, label, items }] : [];
   });
 }
 

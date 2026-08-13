@@ -46,10 +46,15 @@ describe('atlas presentation', () => {
 
   it('uses canonical entity names and inverse language for incoming directed relationships', () => {
     const viewModel = createAtlasViewModel(cimsState('smart-textiles'), ENTITIES, ENTITY_PRESENTATION);
+    const groups = viewModel.selected?.relationshipGroups;
     const relationshipText = viewModel.selected?.relationshipGroups
       .flatMap((group) => group.items)
       .map((relationship) => relationship.text);
 
+    expect(groups?.map((group) => group.label)).toEqual([
+      'Institutional Containment',
+      'Scientific Coordination',
+    ]);
     expect(relationshipText).toEqual(expect.arrayContaining([
       'Contained by — CiMS — Center for Intelligent Material Systems',
       'Coordinated by — CiMS — Center for Intelligent Material Systems',
@@ -64,7 +69,7 @@ describe('atlas presentation', () => {
     expect(overview.relationships).toHaveLength(16);
     expect(cims.selected?.relationshipGroups.flatMap((group) => group.items)).toHaveLength(14);
     expect(cims.selected?.relationshipGroups.map((group) => group.label)).toEqual([
-      'Contains', 'Coordinates', 'Adjacent to', 'Collaborates with',
+      'Institutional Containment', 'Scientific Coordination', 'Spatial Adjacency', 'Research Collaboration',
     ]);
     expect(cims.selected?.relationshipGroups.flatMap((group) => group.items).map((item) => item.text))
       .toContain('Contains — Smart Textiles');
