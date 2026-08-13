@@ -95,6 +95,41 @@ describe('createAppShell', () => {
     expect(media.removeEventListener).toHaveBeenCalledOnce();
   });
 
+  it('moves focused legend disclosure into the visible detail sheet before compact mode hides it', () => {
+    const media = createCompactMedia(false);
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue(media));
+    const { root, shell } = mount();
+    renderCims(shell, 'smart-textiles');
+    const legendDisclosure = root.querySelector<HTMLElement>('.route-legend')!;
+    const legendToggle = root.querySelector<HTMLButtonElement>('[data-legend-toggle]')!;
+    legendToggle.click();
+    legendToggle.focus();
+
+    expect(legendDisclosure.hidden).toBe(false);
+    media.dispatch(true);
+
+    expect(legendDisclosure.hidden).toBe(true);
+    expect(document.activeElement).toBe(shell.card.querySelector('[data-detail-dismiss]'));
+    expect(legendDisclosure.contains(document.activeElement)).toBe(false);
+  });
+
+  it('moves focused desktop-only motion control to a stable header control before compact mode hides it', () => {
+    const media = createCompactMedia(false);
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue(media));
+    const { root, shell } = mount();
+    const reducedMotion = root.querySelector<HTMLButtonElement>('[data-reduced-motion]')!;
+    const overview = root.querySelector<HTMLButtonElement>('[data-overview]')!;
+    reducedMotion.focus();
+    reducedMotion.blur();
+    expect(document.activeElement).toBe(document.body);
+
+    media.dispatch(true);
+
+    expect(shell.navigator.hidden).toBe(true);
+    expect(document.activeElement).toBe(overview);
+    expect(document.activeElement).not.toBe(reducedMotion);
+  });
+
   it('expands and focuses the compact explorer when its skip link is activated', () => {
     const media = createCompactMedia(true);
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue(media));

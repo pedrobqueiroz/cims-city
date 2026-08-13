@@ -165,6 +165,7 @@ export function createAppShell(root: HTMLElement, entities: readonly Neighborhoo
   let explorerExpanded = !compactLayout;
   let reducedMotion = false;
   let disposed = false;
+  let lastFocusedElement: HTMLElement | null = null;
   navigator.hidden = !explorerExpanded;
   explorerToggle.setAttribute('aria-expanded', String(explorerExpanded));
 
@@ -179,11 +180,24 @@ export function createAppShell(root: HTMLElement, entities: readonly Neighborhoo
   };
 
   const onCompactLayoutChange = (event: MediaQueryListEvent): void => {
-    const focusWasInNavigator = navigator.contains(document.activeElement);
+    const activeElement = document.activeElement;
+    const focusedElement = activeElement === document.body && lastFocusedElement
+      ? lastFocusedElement
+      : activeElement;
+    const focusWasInNavigator = navigator.contains(focusedElement);
+    const focusWillBeHidden = event.matches && (
+      focusWasInNavigator
+      || focusedElement === reducedMotionButton
+      || (detailExpanded && Boolean(currentViewModel.selected) && legendDisclosure.contains(focusedElement))
+    );
+    const moveFocusIntoDetail = focusWillBeHidden && detailExpanded && Boolean(currentViewModel.selected);
+    if (moveFocusIntoDetail) focusOpenDetail();
     compactLayout = event.matches;
     setExplorerExpanded(!compactLayout);
     syncCompactOverlays();
-    if (compactLayout && focusWasInNavigator) explorerToggle.focus();
+    if (focusWillBeHidden && !moveFocusIntoDetail) {
+      (focusWasInNavigator ? explorerToggle : overviewButton).focus();
+    }
   };
   compactMedia?.addEventListener?.('change', onCompactLayoutChange);
 
@@ -395,6 +409,9 @@ export function createAppShell(root: HTMLElement, entities: readonly Neighborhoo
   };
 
   const onKeyDown = (event: KeyboardEvent): void => { if (event.key === 'Escape' && !isEditingTarget(event.target)) options.onOverview(); };
+  const onFocusIn = (event: FocusEvent): void => {
+    if (event.target instanceof HTMLElement) lastFocusedElement = event.target;
+  };
   const skipLink = document.querySelector<HTMLAnchorElement>('.skip-link[href="#organization-explorer"]');
   const onSkipToExplorer = (event: Event): void => {
     event.preventDefault();
@@ -418,6 +435,7 @@ export function createAppShell(root: HTMLElement, entities: readonly Neighborhoo
     setExplorerExpanded(!explorerExpanded);
   });
   document.addEventListener('keydown', onKeyDown);
+  element.addEventListener('focusin', onFocusIn);
   skipLink?.addEventListener('click', onSkipToExplorer);
   render(currentState, currentViewModel);
   setStatus('loading');
@@ -428,6 +446,7 @@ export function createAppShell(root: HTMLElement, entities: readonly Neighborhoo
     dispose: () => {
       if (disposed) return; disposed = true;
       document.removeEventListener('keydown', onKeyDown);
+      element.removeEventListener('focusin', onFocusIn);
       skipLink?.removeEventListener('click', onSkipToExplorer);
       compactMedia?.removeEventListener?.('change', onCompactLayoutChange);
       canvasObserver?.disconnect();
