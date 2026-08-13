@@ -11,12 +11,26 @@ function cimsState(selectedId: string | null = null) {
   return state;
 }
 
-function mount() {
+function createCompactMedia(initialMatches: boolean) {
+  let matches = initialMatches;
+  const listeners = new Set<(event: { matches: boolean }) => void>();
+  return {
+    get matches() { return matches; },
+    addEventListener: vi.fn((_type: string, listener: (event: { matches: boolean }) => void) => listeners.add(listener)),
+    removeEventListener: vi.fn((_type: string, listener: (event: { matches: boolean }) => void) => listeners.delete(listener)),
+    dispatch(nextMatches: boolean) {
+      matches = nextMatches;
+      for (const listener of listeners) listener({ matches });
+    },
+  };
+}
+
+function mount({ withCanvas = true, shellOptions = {} }: { withCanvas?: boolean; shellOptions?: object } = {}) {
   const root = document.createElement('section');
   const canvasHost = document.createElement('div');
   canvasHost.dataset.canvasHost = 'true';
   const canvas = document.createElement('canvas');
-  canvasHost.append(canvas);
+  if (withCanvas) canvasHost.append(canvas);
   root.append(canvasHost);
   document.body.append(root);
   const options = {
@@ -24,9 +38,10 @@ function mount() {
     onPreview: vi.fn(), onRelationship: vi.fn(), onRetry: vi.fn(),
     onReducedMotionChange: vi.fn(), onDetailDisclosureChange: vi.fn(),
     onLegendDisclosureChange: vi.fn(),
+    ...shellOptions,
   };
-  const shell = createAppShell(root, ENTITIES, options);
-  return { root, canvas, shell, options };
+  const shell = createAppShell(root, ENTITIES, options as Parameters<typeof createAppShell>[2]);
+  return { root, canvasHost, canvas, shell, options };
 }
 
 function renderCims(shell: ReturnType<typeof createAppShell>, selectedId: string | null = null) {
@@ -42,7 +57,8 @@ describe('createAppShell', () => {
   afterEach(() => { document.body.innerHTML = ''; vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
   it('starts the mobile explorer collapsed and expands it with a truthful disclosure control', () => {
-    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true }));
+    const media = createCompactMedia(true);
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue(media));
     const { root, shell } = mount();
     const toggle = root.querySelector<HTMLButtonElement>('[data-explorer-toggle]')!;
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
@@ -54,6 +70,42 @@ describe('createAppShell', () => {
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     expect(shell.navigator.hidden).toBe(true);
     expect(shell.card.hidden).toBe(false);
+    expect(document.activeElement).toBe(root.querySelector('[data-detail-toggle]'));
+  });
+
+  it('updates the explorer disclosure across live compact-layout transitions and removes the listener once', () => {
+    const media = createCompactMedia(false);
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue(media));
+    const { root, shell } = mount();
+    const toggle = root.querySelector<HTMLButtonElement>('[data-explorer-toggle]')!;
+
+    expect(shell.navigator.hidden).toBe(false);
+    media.dispatch(true);
+    expect(shell.navigator.hidden).toBe(true);
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    media.dispatch(false);
+    expect(shell.navigator.hidden).toBe(false);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+
+    shell.dispose(); shell.dispose();
+    expect(media.removeEventListener).toHaveBeenCalledOnce();
+  });
+
+  it('expands and focuses the compact explorer when its skip link is activated', () => {
+    const media = createCompactMedia(true);
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue(media));
+    const skipLink = document.createElement('a');
+    skipLink.className = 'skip-link';
+    skipLink.href = '#organization-explorer';
+    skipLink.textContent = 'Skip to the organization explorer';
+    document.body.append(skipLink);
+    const { root, shell } = mount();
+
+    expect(shell.navigator.hidden).toBe(true);
+    skipLink.click();
+    expect(shell.navigator.hidden).toBe(false);
+    expect(root.querySelector('[data-explorer-toggle]')?.getAttribute('aria-expanded')).toBe('true');
+    expect(document.activeElement).toBe(shell.navigator);
   });
 
   it('renders SEi and CiMS breadcrumbs with semantic Back and Overview actions', () => {
@@ -109,6 +161,7 @@ describe('createAppShell', () => {
     root.querySelector<HTMLButtonElement>('[data-detail-dismiss]')!.click();
     expect(detail.hidden).toBe(true);
     expect(detailToggle.getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(detailToggle);
     expect(root.querySelector('[data-entity-id=smart-textiles]')?.getAttribute('aria-current')).toBe('true');
     detailToggle.click(); legendToggle.click();
     expect(detail.hidden).toBe(false);
@@ -143,6 +196,22 @@ describe('createAppShell', () => {
     expect(viewport).not.toContain('maximum-scale=1');
   });
 
+  it('labels a canvas appended after shell creation and stops observing on dispose', async () => {
+    const { canvasHost, shell } = mount({ withCanvas: false });
+    const lateCanvas = document.createElement('canvas');
+    canvasHost.append(lateCanvas);
+
+    await vi.waitFor(() => expect(lateCanvas.getAttribute('role')).toBe('img'));
+    expect(lateCanvas.getAttribute('aria-label')).toContain('interactive institutional atlas');
+    expect(lateCanvas.getAttribute('aria-describedby')).toBeTruthy();
+
+    shell.dispose();
+    const canvasAfterDispose = document.createElement('canvas');
+    canvasHost.append(canvasAfterDispose);
+    await Promise.resolve();
+    expect(canvasAfterDispose.getAttribute('role')).toBeNull();
+  });
+
   it('measures visible shell rectangles and the edge insets they occupy', () => {
     const { shell } = mount(); renderCims(shell, 'smart-textiles');
     vi.spyOn(shell.element, 'getBoundingClientRect').mockReturnValue(rect(0, 0, 1200, 800));
@@ -154,6 +223,33 @@ describe('createAppShell', () => {
       { left: 900, top: 120, right: 1200, bottom: 720 },
     ]));
     expect(measurement.insets).toMatchObject({ left: 280, right: 300 });
+  });
+
+  it('measures realistic gutter-offset panels as true edge reservations', () => {
+    const { root, shell } = mount(); renderCims(shell, 'smart-textiles');
+    vi.spyOn(shell.element, 'getBoundingClientRect').mockReturnValue(rect(0, 0, 1200, 800));
+    vi.spyOn(root.querySelector<HTMLElement>('.atlas-header')!, 'getBoundingClientRect').mockReturnValue(rect(16, 16, 1184, 96));
+    vi.spyOn(shell.navigator, 'getBoundingClientRect').mockReturnValue(rect(16, 112, 296, 784));
+    vi.spyOn(shell.card, 'getBoundingClientRect').mockReturnValue(rect(916, 128, 1184, 704));
+    vi.spyOn(root.querySelector<HTMLElement>('.route-legend')!, 'getBoundingClientRect').mockReturnValue(rect(936, 720, 1184, 784));
+    vi.spyOn(root.querySelector<HTMLElement>('.atlas-status')!, 'getBoundingClientRect').mockReturnValue(rect(600, 128, 601, 129));
+
+    const measurement = shell.measureSafeInsets();
+    expect(measurement.insets).toEqual({ top: 96, right: 284, bottom: 80, left: 296 });
+    expect(measurement.rectangles).not.toContainEqual({ left: 600, top: 128, right: 601, bottom: 129 });
+  });
+
+  it('classifies a wide portrait detail sheet as a bottom reservation only', () => {
+    const media = createCompactMedia(true);
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue(media));
+    const { root, shell } = mount(); renderCims(shell, 'smart-textiles');
+    vi.spyOn(shell.element, 'getBoundingClientRect').mockReturnValue(rect(0, 0, 375, 812));
+    vi.spyOn(root.querySelector<HTMLElement>('.atlas-header')!, 'getBoundingClientRect').mockReturnValue(rect(8, 8, 367, 122));
+    vi.spyOn(shell.card, 'getBoundingClientRect').mockReturnValue(rect(8, 382, 367, 804));
+    vi.spyOn(root.querySelector<HTMLElement>('.route-legend')!, 'getBoundingClientRect').mockReturnValue(rect(186, 686, 367, 748));
+    vi.spyOn(root.querySelector<HTMLElement>('.atlas-status')!, 'getBoundingClientRect').mockReturnValue(rect(187, 131, 188, 132));
+
+    expect(shell.measureSafeInsets().insets).toEqual({ top: 122, right: 0, bottom: 430, left: 0 });
   });
 
   it('preserves the Task 8 compatibility methods and cleans up listeners idempotently', () => {

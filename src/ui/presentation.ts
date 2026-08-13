@@ -44,6 +44,13 @@ const RELATIONSHIP_LABELS: Readonly<Record<RelationshipKind, string>> = {
   collaborates: 'Collaborates with',
 };
 
+const INVERSE_RELATIONSHIP_LABELS: Readonly<Record<RelationshipKind, string>> = {
+  contains: 'Contained by',
+  coordinates: 'Coordinated by',
+  adjacent: 'Adjacent to',
+  collaborates: 'Collaborates with',
+};
+
 const CATEGORY_ORDER: readonly EntityCategory[] = [
   'umbrella', 'hub', 'research-group', 'adjacent-lab', 'sei-pillar', 'external-partner',
 ];
@@ -116,7 +123,11 @@ function canonicalRelationships(entities: readonly NeighborhoodEntity[]): Relati
   return result;
 }
 
-function relationshipGroups(entityId: string, relationships: readonly RelationshipItem[]): RelationshipGroup[] {
+function relationshipGroups(
+  entityId: string,
+  relationships: readonly RelationshipItem[],
+  entitiesById: ReadonlyMap<string, NeighborhoodEntity>,
+): RelationshipGroup[] {
   return ROUTE_LEGEND_COPY.flatMap(({ kind }) => {
     const items = relationships
       .filter((relationship) => relationship.kind === kind
@@ -124,10 +135,11 @@ function relationshipGroups(entityId: string, relationships: readonly Relationsh
       .map((relationship) => {
         const outgoing = relationship.sourceId === entityId;
         const relatedId = outgoing ? relationship.targetId : relationship.sourceId;
+        const relatedName = entitiesById.get(relatedId)?.name ?? relatedId;
         return {
           ...relationship,
           relatedId,
-          text: `${RELATIONSHIP_LABELS[kind]} — ${relationship.fullText.split(` ${RELATIONSHIP_LABELS[kind].toLocaleLowerCase()} `)[outgoing ? 1 : 0]}`,
+          text: `${outgoing ? RELATIONSHIP_LABELS[kind] : INVERSE_RELATIONSHIP_LABELS[kind]} — ${relatedName}`,
         };
       });
     return items.length > 0 ? [{ kind, label: RELATIONSHIP_LABELS[kind], items }] : [];
@@ -177,7 +189,7 @@ export function createAtlasViewModel(
       leader: selectedEntity.leader,
       description: selectedEntity.description,
       example: selectedEntity.example,
-      relationshipGroups: relationshipGroups(selectedEntity.id, relationships),
+      relationshipGroups: relationshipGroups(selectedEntity.id, relationships, byId),
     } : null,
   };
 }

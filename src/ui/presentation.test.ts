@@ -44,6 +44,20 @@ describe('atlas presentation', () => {
     });
   });
 
+  it('uses canonical entity names and inverse language for incoming directed relationships', () => {
+    const viewModel = createAtlasViewModel(cimsState('smart-textiles'), ENTITIES, ENTITY_PRESENTATION);
+    const relationshipText = viewModel.selected?.relationshipGroups
+      .flatMap((group) => group.items)
+      .map((relationship) => relationship.text);
+
+    expect(relationshipText).toEqual(expect.arrayContaining([
+      'Contained by — CiMS — Center for Intelligent Material Systems',
+      'Coordinated by — CiMS — Center for Intelligent Material Systems',
+    ]));
+    expect(relationshipText).not.toContain('Contains — CiMS — Center for Intelligent Material Systems');
+    expect(relationshipText).not.toContain('Coordinates — CiMS — Center for Intelligent Material Systems');
+  });
+
   it('exposes all 16 canonical relationships and all 14 incident CiMS relationships once', () => {
     const overview = createAtlasViewModel(initialNeighborhoodState(), ENTITIES, ENTITY_PRESENTATION);
     const cims = createAtlasViewModel(cimsState('cims-hub'), ENTITIES, ENTITY_PRESENTATION);

@@ -14,6 +14,7 @@ export interface AppShellOptions {
   onReducedMotionChange?: (reduced: boolean) => void;
   onDetailDisclosureChange?: (expanded: boolean) => void;
   onLegendDisclosureChange?: (expanded: boolean) => void;
+  compactMedia?: Pick<MediaQueryList, 'matches' | 'addEventListener' | 'removeEventListener'>;
 }
 
 export interface SafeInsetsMeasurement {
@@ -89,6 +90,7 @@ export function createAppShell(root: HTMLElement, entities: readonly Neighborhoo
   navigator.className = 'organization-nav ui-panel';
   navigator.dataset.safeRegion = '';
   navigator.setAttribute('aria-label', 'Organization');
+  navigator.tabIndex = -1;
 
   const detailToggle = textElement('button', 'Show Selected Details', 'detail-toggle ui-panel');
   detailToggle.type = 'button'; detailToggle.dataset.detailToggle = '';
@@ -139,21 +141,27 @@ export function createAppShell(root: HTMLElement, entities: readonly Neighborhoo
 
   const canvasDescription = textElement('p', 'Interactive institutional atlas. The semantic explorer provides the same organizations and connections without canvas gestures.', 'visually-hidden');
   canvasDescription.id = `atlas-canvas-description-${shellId}`;
-  const canvas = root.querySelector('canvas');
-  if (canvas) {
+  const bindCanvasAccessibility = (canvas: HTMLCanvasElement | null): void => {
+    if (!canvas) return;
     canvas.setAttribute('role', 'img');
     canvas.setAttribute('aria-label', 'SEi interactive institutional atlas');
     canvas.setAttribute('aria-describedby', canvasDescription.id);
-  }
+  };
+  bindCanvasAccessibility(root.querySelector('canvas'));
 
   element.append(header, explorerToggle, navigator, detailToggle, card, legendDisclosure, statusRegion, canvasDescription);
   root.append(element);
+  const canvasObserver = typeof MutationObserver === 'undefined' ? null : new MutationObserver(() => {
+    bindCanvasAccessibility(root.querySelector('canvas'));
+  });
+  canvasObserver?.observe(root, { childList: true, subtree: true });
 
   let currentState = reduceNeighborhoodState(initialNeighborhoodState(), { type: 'ENTER_SCOPE', scopeId: 'cims' });
   let currentViewModel = createAtlasViewModel(currentState, entities, ENTITY_PRESENTATION);
   let detailExpanded = false;
   let legendExpanded = false;
-  const compactLayout = window.matchMedia?.('(max-width: 900px)').matches ?? false;
+  const compactMedia = options.compactMedia ?? window.matchMedia?.('(max-width: 900px)');
+  let compactLayout = compactMedia?.matches ?? false;
   let explorerExpanded = !compactLayout;
   let reducedMotion = false;
   let disposed = false;
@@ -165,6 +173,12 @@ export function createAppShell(root: HTMLElement, entities: readonly Neighborhoo
     navigator.hidden = !expanded;
     explorerToggle.setAttribute('aria-expanded', String(expanded));
   };
+
+  const onCompactLayoutChange = (event: MediaQueryListEvent): void => {
+    compactLayout = event.matches;
+    setExplorerExpanded(!compactLayout);
+  };
+  compactMedia?.addEventListener?.('change', onCompactLayoutChange);
 
   const renderBreadcrumbs = (viewModel: AtlasViewModel): void => {
     breadcrumbList.replaceChildren();
@@ -222,7 +236,10 @@ export function createAppShell(root: HTMLElement, entities: readonly Neighborhoo
     headingRow.append(textElement('h2', selected.name));
     const dismiss = textElement('button', 'Collapse Details');
     dismiss.type = 'button'; dismiss.dataset.detailDismiss = ''; dismiss.setAttribute('aria-label', 'Collapse selected details');
-    dismiss.addEventListener('click', () => setDetailExpanded(false));
+    dismiss.addEventListener('click', () => {
+      setDetailExpanded(false);
+      detailToggle.focus();
+    });
     headingRow.append(dismiss); card.append(headingRow);
     if (selected.leader) { card.append(textElement('h3', 'Leadership')); card.append(textElement('p', selected.leader)); }
     card.append(textElement('h3', 'About')); card.append(textElement('p', selected.description));
@@ -261,6 +278,7 @@ export function createAppShell(root: HTMLElement, entities: readonly Neighborhoo
       if (state.selectedId && compactLayout) setExplorerExpanded(false);
     }
     renderBreadcrumbs(viewModel); renderNavigator(viewModel); renderDetail(viewModel);
+    if (selectionChanged && state.selectedId && compactLayout) detailToggle.focus();
     backButton.disabled = state.scopeId === 'sei' && !state.selectedId;
     if (state.selectedId) overviewButton.removeAttribute('aria-current');
     else overviewButton.setAttribute('aria-current', 'true');
@@ -293,6 +311,7 @@ export function createAppShell(root: HTMLElement, entities: readonly Neighborhoo
       if (compactLayout) setExplorerExpanded(false);
       detailExpanded = true;
       renderDetail(currentViewModel);
+      if (compactLayout) detailToggle.focus();
       return;
     }
     overviewButton.setAttribute('aria-current', 'true');
@@ -316,24 +335,57 @@ export function createAppShell(root: HTMLElement, entities: readonly Neighborhoo
     const rectangles = [...element.querySelectorAll<HTMLElement>('[data-safe-region]')]
       .filter((region) => !region.hidden)
       .map((region) => region.getBoundingClientRect())
-      .filter((rectangle) => rectangle.width > 0 && rectangle.height > 0)
+      .filter((rectangle) => rectangle.width > 1 && rectangle.height > 1)
       .map((rectangle) => ({
         top: rectangle.top - shellRect.top, right: rectangle.right - shellRect.left,
         bottom: rectangle.bottom - shellRect.top, left: rectangle.left - shellRect.left,
       }));
-    const edge = 1;
+    const insets = { top: 0, right: 0, bottom: 0, left: 0 };
+    const width = shellRect.width;
+    const height = shellRect.height;
+    for (const rectangle of rectangles) {
+      const spansHorizontalCenter = rectangle.left <= width / 2 && rectangle.right >= width / 2;
+      const spansVerticalCenter = rectangle.top <= height / 2 && rectangle.bottom >= height / 2;
+      const horizontalCoverage = (rectangle.right - rectangle.left) / width;
+      const verticalCoverage = (rectangle.bottom - rectangle.top) / height;
+      const reservations = {
+        top: rectangle.bottom,
+        right: width - rectangle.left,
+        bottom: height - rectangle.top,
+        left: rectangle.right,
+      };
+      const gaps = {
+        top: rectangle.top,
+        right: width - rectangle.right,
+        bottom: height - rectangle.bottom,
+        left: rectangle.left,
+      };
+      if (spansHorizontalCenter && (!spansVerticalCenter || horizontalCoverage >= verticalCoverage)) {
+        const edge = gaps.top <= gaps.bottom ? 'top' : 'bottom';
+        insets[edge] = Math.max(insets[edge], reservations[edge]);
+      } else if (spansVerticalCenter) {
+        const edge = gaps.left <= gaps.right ? 'left' : 'right';
+        insets[edge] = Math.max(insets[edge], reservations[edge]);
+      } else {
+        const nearestGap = Math.min(gaps.top, gaps.right, gaps.bottom, gaps.left);
+        for (const edge of ['top', 'right', 'bottom', 'left'] as const) {
+          if (gaps[edge] === nearestGap) insets[edge] = Math.max(insets[edge], reservations[edge]);
+        }
+      }
+    }
     return {
       rectangles,
-      insets: {
-        top: Math.max(0, ...rectangles.filter((rect) => rect.top <= edge).map((rect) => rect.bottom)),
-        right: Math.max(0, ...rectangles.filter((rect) => rect.right >= shellRect.width - edge).map((rect) => shellRect.width - rect.left)),
-        bottom: Math.max(0, ...rectangles.filter((rect) => rect.bottom >= shellRect.height - edge).map((rect) => shellRect.height - rect.top)),
-        left: Math.max(0, ...rectangles.filter((rect) => rect.left <= edge).map((rect) => rect.right)),
-      },
+      insets,
     };
   };
 
   const onKeyDown = (event: KeyboardEvent): void => { if (event.key === 'Escape' && !isEditingTarget(event.target)) options.onOverview(); };
+  const skipLink = document.querySelector<HTMLAnchorElement>('.skip-link[href="#organization-explorer"]');
+  const onSkipToExplorer = (event: Event): void => {
+    event.preventDefault();
+    setExplorerExpanded(true);
+    navigator.focus();
+  };
   backButton.addEventListener('click', () => options.onBack?.());
   overviewButton.addEventListener('click', options.onOverview);
   retryButton.addEventListener('click', () => options.onRetry?.());
@@ -347,6 +399,7 @@ export function createAppShell(root: HTMLElement, entities: readonly Neighborhoo
     setExplorerExpanded(!explorerExpanded);
   });
   document.addEventListener('keydown', onKeyDown);
+  skipLink?.addEventListener('click', onSkipToExplorer);
   render(currentState, currentViewModel);
   setStatus('loading');
 
@@ -355,7 +408,11 @@ export function createAppShell(root: HTMLElement, entities: readonly Neighborhoo
     setWebGLStatus: setStatus, setReducedMotion,
     dispose: () => {
       if (disposed) return; disposed = true;
-      document.removeEventListener('keydown', onKeyDown); element.remove();
+      document.removeEventListener('keydown', onKeyDown);
+      skipLink?.removeEventListener('click', onSkipToExplorer);
+      compactMedia?.removeEventListener?.('change', onCompactLayoutChange);
+      canvasObserver?.disconnect();
+      element.remove();
     },
   };
 }
