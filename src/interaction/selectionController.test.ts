@@ -245,6 +245,21 @@ describe('SelectionController', () => {
     expect(previews).toEqual(['alpha']);
   });
 
+  it('ignores a stale cancelled hover callback without consuming the newer preview sample', () => {
+    const { controller, frames, previews } = createHarness();
+
+    controller.pointerMove(sample(1, 200, 100));
+    const stale = frames.queued[0]!;
+    controller.pointerLeave();
+    controller.pointerMove(sample(1, 200, 100));
+    const current = frames.queued[1]!;
+
+    stale(0);
+    expect(previews).toEqual([]);
+    current(0);
+    expect(previews).toEqual(['alpha']);
+  });
+
   it('clears preview when the pointer leaves without committing selection', () => {
     const { canvas, frames, previews, selections } = createHarness();
 

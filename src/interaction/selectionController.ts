@@ -41,6 +41,7 @@ export class SelectionController {
   private previewId: string | null = null;
   private pendingPreview: PointerSample | undefined;
   private previewFrame: number | undefined;
+  private previewGeneration = 0;
   private disposed = false;
 
   private readonly handlePointerDown = (event: PointerEvent): void => {
@@ -191,7 +192,10 @@ export class SelectionController {
   private schedulePreview(sample: PointerSample): void {
     this.pendingPreview = sample;
     if (this.previewFrame !== undefined) return;
+    const generation = this.previewGeneration + 1;
+    this.previewGeneration = generation;
     this.previewFrame = this.requestFrame(() => {
+      if (generation !== this.previewGeneration) return;
       this.previewFrame = undefined;
       const pending = this.pendingPreview;
       this.pendingPreview = undefined;
@@ -227,6 +231,7 @@ export class SelectionController {
   }
 
   private cancelPendingPreview(): void {
+    this.previewGeneration += 1;
     if (this.previewFrame !== undefined) this.cancelFrame(this.previewFrame);
     this.previewFrame = undefined;
     this.pendingPreview = undefined;
