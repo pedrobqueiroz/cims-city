@@ -225,6 +225,23 @@ describe('CameraController', () => {
     expect(orbit.maxDistance).toBeGreaterThanOrEqual(camera.position.distanceTo(orbit.target));
   });
 
+  it('keeps a safe-rectangle refit unclamped when it interrupts overview-to-local travel', () => {
+    const { camera, controller, orbit, setNow } = createClampingHarness();
+    controller.focusEntity('alpha', 0);
+    setNow(100);
+    controller.update(100);
+
+    controller.refitCurrentTarget(
+      new Box3(new Vector3(-60, 0, -30), new Vector3(60, 8, 30)),
+      { width: 1440, height: 900 },
+      { top: 72, right: 360, bottom: 48, left: 96 },
+    );
+
+    expect(controller.isTransitioning).toBe(false);
+    expect(camera.position.distanceTo(orbit.target)).toBeGreaterThan(22);
+    expect(orbit.maxDistance).toBeGreaterThanOrEqual(camera.position.distanceTo(orbit.target));
+  });
+
   it('finishes an SEi focus move at its authored context distance and limits', () => {
     const { camera, orbit, controller, updates } = createClampingHarness(false, LAYOUT_BY_ID);
     const constructorUpdates = updates.count;

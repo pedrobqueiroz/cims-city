@@ -104,7 +104,8 @@ export class CameraController {
     safeInsets: PerspectiveFitInput['safeInsets'],
   ): void {
     if (this.disposed) return;
-    if (this.transition) this.interrupt();
+    const interrupted = this.transition !== undefined;
+    if (interrupted) this.interrupt();
     const direction = this.camera.position.clone().sub(this.orbit.target).normalize();
     const pose = fitPerspectiveView({
       bounds,
@@ -115,7 +116,8 @@ export class CameraController {
       padding: 24,
     });
     this.applyPose(pose.position, pose.target);
-    this.applyStateLimits();
+    if (interrupted) this.applyFreeExploreLimits();
+    else this.applyStateLimits();
     this.orbit.enabled = true;
     this.orbit.update();
     this.requestRender();
