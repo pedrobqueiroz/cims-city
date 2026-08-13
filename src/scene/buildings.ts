@@ -377,11 +377,14 @@ export function createEntityBuilding(
   const districtSize = district?.bounds.getSize(new THREE.Vector3());
   const landBounds = entity.id === 'sei' ? scopeBounds('sei') : undefined;
   const landSize = landBounds?.getSize(new THREE.Vector3());
+  visible.updateMatrixWorld(true);
+  const visualBounds = new THREE.Box3().setFromObject(visible);
+  const visualSize = visualBounds.getSize(new THREE.Vector3());
   const proxySize = landSize
     ? [landSize.x, 1, landSize.z] as const
     : districtSize
       ? [districtSize.x, districtSize.y, districtSize.z] as const
-      : [12, 7, 9] as const;
+      : [visualSize.x, visualSize.y, visualSize.z] as const;
   const proxy = new THREE.Mesh(new THREE.BoxGeometry(...proxySize), proxyMaterial);
   proxy.name = `proxy:${entity.id}`;
   if (landBounds) {
@@ -397,7 +400,7 @@ export function createEntityBuilding(
       district.center.y - layout.position[1],
       district.center.z - layout.position[2],
     );
-  } else proxy.position.y = 3.5;
+  } else proxy.position.copy(visualBounds.getCenter(new THREE.Vector3()));
   proxy.visible = false;
   proxy.userData.entityId = entity.id;
 

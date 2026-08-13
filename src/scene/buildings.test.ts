@@ -206,13 +206,19 @@ describe('procedural entity buildings', () => {
     }
   });
 
-  it.each(groupMotifs)('provides the prescribed invisible 12x7x9 interaction proxy for %s', (id) => {
+  it.each(groupMotifs)('derives the invisible %s interaction proxy from its visual footprint', (id) => {
     const visual = build(id);
     const geometry = visual.proxy.geometry;
+    const visibleBounds = worldBox(visual.visible);
+    const proxyBounds = worldBox(visual.proxy);
 
     expect(geometry).toBeInstanceOf(THREE.BoxGeometry);
-    expect((geometry as THREE.BoxGeometry).parameters).toMatchObject({ width: 12, height: 7, depth: 9 });
-    expect(visual.proxy.position.y).toBe(3.5);
+    expect(proxyBounds.getSize(new THREE.Vector3()).toArray()).toEqual(
+      visibleBounds.getSize(new THREE.Vector3()).toArray().map((value) => expect.closeTo(value, 5)),
+    );
+    expect(proxyBounds.getCenter(new THREE.Vector3()).toArray()).toEqual(
+      visibleBounds.getCenter(new THREE.Vector3()).toArray().map((value) => expect.closeTo(value, 5)),
+    );
     expect(visual.proxy.visible).toBe(false);
     expect(meshMaterial(visual.proxy).visible).toBe(false);
     expect(visual.proxy.userData).toMatchObject({ entityId: id });
