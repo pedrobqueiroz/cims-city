@@ -24,18 +24,18 @@ type Point = readonly [number, number];
 
 const contextPoints: Readonly<Record<'trees' | 'lamps' | 'bollards', readonly Point[]>> = {
   trees: [
-    [-36, -18], [34, 18], [-21, -31], [16, 31], [2, -34], [-9, 32],
+    [-36, -18], [46, 22], [-21, -31], [16, 31], [2, -34], [-9, 32],
     [25, -27], [-31, 20], [37, -7], [8, 25], [14, -31], [-21, 28],
-    [37, 6], [-31, -26], [27, 27], [-10, -34], [34, -18], [4, 33],
+    [37, 6], [-31, -26], [27, 27], [-10, -34], [44, -28], [4, 33],
   ],
   lamps: [
-    [-29, -16], [28, 16], [-17, -27], [16, 27], [0, -29], [0, 29],
+    [-29, -16], [47, 19], [-17, -27], [16, 27], [0, -29], [0, 29],
     [20, -23], [-21, 23], [30, -3], [5, 24], [27, -14], [-27, 14],
   ],
   bollards: [
     [-52, -12], [27, 11], [-48, -26], [20, 21], [-9, -27], [9, 27],
     [4, -28], [-4, 28], [16, -24], [-16, 24], [24, -17], [-24, 17],
-    [28, -5], [-52, 8], [28, 6], [-50, -3], [23, 18], [-44, -21],
+    [28, -5], [-52, 8], [28, 6], [-50, -3], [48, 34], [-44, -21],
     [13, 25], [-13, -25],
   ],
 };
@@ -229,9 +229,9 @@ export function createCampus(args: {
     dispose(): void {
       if (disposed) return;
       disposed = true;
-      for (const visual of [...entityVisuals.values()].reverse()) disposeEntityVisual(visual);
-      for (const route of [...routes].reverse()) disposeRoute(route);
       for (const geometry of [...ownedGeometries].reverse()) geometry.dispose();
+      for (const route of [...routes].reverse()) disposeRoute(route);
+      for (const visual of [...entityVisuals.values()].reverse()) disposeEntityVisual(visual);
       root.removeFromParent();
     },
   };

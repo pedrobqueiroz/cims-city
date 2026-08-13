@@ -290,7 +290,7 @@ function populateNewZema(visible: THREE.Group, palette: MaterialPalette): number
     mesh(new THREE.BoxGeometry(6, 3.1, 5), palette.groupShell, 'new-zema:volume:1', [0.5, 1.55, -1]),
     mesh(new THREE.BoxGeometry(5, 2, 4), palette.context, 'new-zema:volume:2', [6, 1, 1.5]),
   );
-  const roof = mesh(createFoldedRoofGeometry(), palette.sma, 'new-zema:folded-roof', [0.5, -1.5, -1]);
+  const roof = mesh(createFoldedRoofGeometry(), palette.sma, 'new-zema:folded-roof', [0.5, -0.3, -1]);
   roof.scale.set(0.72, 0.72, 0.72);
   roof.rotation.y = -0.12;
   visible.add(roof);
@@ -375,7 +375,8 @@ export function createEntityBuilding(
   proxyMaterial.visible = false;
   const district = DISTRICT_LAYOUT.get(entity.id as 'new-zema' | 'hycatt' | 'uds' | 'htw-saar');
   const districtSize = district?.bounds.getSize(new THREE.Vector3());
-  const landSize = entity.id === 'sei' ? scopeBounds('sei').getSize(new THREE.Vector3()) : undefined;
+  const landBounds = entity.id === 'sei' ? scopeBounds('sei') : undefined;
+  const landSize = landBounds?.getSize(new THREE.Vector3());
   const proxySize = landSize
     ? [landSize.x, 1, landSize.z] as const
     : districtSize
@@ -383,15 +384,20 @@ export function createEntityBuilding(
       : [12, 7, 9] as const;
   const proxy = new THREE.Mesh(new THREE.BoxGeometry(...proxySize), proxyMaterial);
   proxy.name = `proxy:${entity.id}`;
-  if (district) {
+  if (landBounds) {
+    const center = landBounds.getCenter(new THREE.Vector3());
+    proxy.position.set(
+      center.x - layout.position[0],
+      0.5,
+      center.z - layout.position[2],
+    );
+  } else if (district) {
     proxy.position.set(
       district.center.x - layout.position[0],
       district.center.y - layout.position[1],
       district.center.z - layout.position[2],
     );
-  } else {
-    proxy.position.y = entity.id === 'sei' ? 0.5 : 3.5;
-  }
+  } else proxy.position.y = 3.5;
   proxy.visible = false;
   proxy.userData.entityId = entity.id;
 

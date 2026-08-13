@@ -46,6 +46,16 @@ function contextCounts(campus: AtlasCampusVisual): Record<string, number> {
   return Object.fromEntries(directGroup(campus, 'context').children.map((child) => [child.name, (child as THREE.InstancedMesh).count]));
 }
 
+function instanceWorldBox(instances: THREE.InstancedMesh, index: number): THREE.Box3 {
+  instances.geometry.computeBoundingBox();
+  const bounds = instances.geometry.boundingBox;
+  if (!bounds) throw new Error('Missing context geometry bounds');
+  const matrix = new THREE.Matrix4();
+  instances.getMatrixAt(index, matrix);
+  matrix.premultiply(instances.matrixWorld);
+  return bounds.clone().applyMatrix4(matrix);
+}
+
 afterEach(() => {
   for (const campus of campuses.splice(0)) campus.dispose();
   for (const palette of palettes.splice(0)) disposeMaterialPalette(palette);
@@ -266,6 +276,32 @@ describe('campus assembly', () => {
     }
   });
 
+  it('keeps every context instance outside every non-land entity visual', () => {
+    const campus = build();
+    campus.root.updateMatrixWorld(true);
+    const protectedMeshes = [...campus.entityVisuals]
+      .filter(([id]) => id !== 'sei')
+      .flatMap(([id, visual]) => {
+        const meshes: Array<readonly [string, THREE.Box3]> = [];
+        visual.visible.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            meshes.push([id + '/' + child.name, new THREE.Box3().setFromObject(child)]);
+          }
+        });
+        return meshes;
+      });
+
+    for (const child of directGroup(campus, 'context').children as THREE.InstancedMesh[]) {
+      for (let index = 0; index < child.count; index += 1) {
+        const contextBounds = instanceWorldBox(child, index);
+        for (const [entityMesh, visualBounds] of protectedMeshes) {
+          const label = child.name + ':' + index + ' overlaps ' + entityMesh;
+          expect(contextBounds.intersectsBox(visualBounds), label).toBe(false);
+        }
+      }
+    }
+  });
+
   it('uses the context, dark-metal, and SMA palette roles for context furniture', () => {
     const palette = createMaterialPalette();
     const campus = build({ palette });
@@ -297,6 +333,21 @@ describe('campus assembly', () => {
     for (const dispose of disposes) expect(dispose).toHaveBeenCalledTimes(1);
     expect(disposes[2]!.mock.invocationCallOrder[0]).toBeLessThan(disposes[1]!.mock.invocationCallOrder[0]!);
     expect(disposes[1]!.mock.invocationCallOrder[0]).toBeLessThan(disposes[0]!.mock.invocationCallOrder[0]!);
+  });
+
+  it('disposes context, routes, and entities in reverse global creation order', () => {
+    const campus = build();
+    const contextGeometry = (directGroup(campus, 'context').children.at(-1) as THREE.InstancedMesh).geometry;
+    const routeMesh = routeGroups(campus, 'coordinates')[0]!.children[0] as THREE.Mesh;
+    const entityGeometry = campus.entityVisuals.get('sei')!.proxy.geometry;
+    const contextDispose = vi.spyOn(contextGeometry, 'dispose');
+    const routeDispose = vi.spyOn(routeMesh.geometry, 'dispose');
+    const entityDispose = vi.spyOn(entityGeometry, 'dispose');
+
+    campus.dispose();
+
+    expect(contextDispose.mock.invocationCallOrder[0]).toBeLessThan(routeDispose.mock.invocationCallOrder[0]!);
+    expect(routeDispose.mock.invocationCallOrder[0]).toBeLessThan(entityDispose.mock.invocationCallOrder[0]!);
   });
 
   it('disposes all owned geometry once, preserves palette materials, and detaches the root', () => {

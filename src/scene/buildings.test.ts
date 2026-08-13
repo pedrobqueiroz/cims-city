@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ENTITY_BY_ID } from '../data/entities';
 import type { Motif, NeighborhoodEntity } from '../data/schema';
+import { scopeBounds } from './atlasLayout';
 import { LAYOUT_BY_ID, type LayoutNode } from './layout';
 import { createMaterialPalette, disposeMaterialPalette, type MaterialPalette } from './materials';
 import { createEntityBuilding, disposeEntityVisual, type EntityVisual } from './buildings';
@@ -253,6 +254,19 @@ describe('procedural entity buildings', () => {
     expect((land.proxy.geometry as THREE.BoxGeometry).parameters).toMatchObject({ width: 113, height: 1, depth: 89 });
   });
 
+  it('aligns the SEi selection proxy with the authored land bounds in world space', () => {
+    const land = build('sei');
+    land.root.updateMatrixWorld(true);
+    const proxyBounds = new THREE.Box3().setFromObject(land.proxy);
+    const landBounds = scopeBounds('sei');
+
+    expect([proxyBounds.min.x, proxyBounds.max.x, proxyBounds.min.z, proxyBounds.max.z]).toEqual([
+      -58, 55, -39, 50,
+    ]);
+    expect(proxyBounds.getCenter(new THREE.Vector3()).x).toBe(landBounds.getCenter(new THREE.Vector3()).x);
+    expect(proxyBounds.getCenter(new THREE.Vector3()).z).toBe(landBounds.getCenter(new THREE.Vector3()).z);
+  });
+
   it.each([
     ['hycatt', 41, 31],
     ['new-zema', 38, 27],
@@ -290,6 +304,14 @@ describe('procedural entity buildings', () => {
     expect(htw.visible.userData).toMatchObject({ visualFamily: 'workshop-tower-pair' });
     expect(htw.visible.getObjectByName('htw-saar:workshop')).toBeInstanceOf(THREE.Mesh);
     expect(htw.visible.getObjectByName('htw-saar:tower')).toBeInstanceOf(THREE.Mesh);
+  });
+
+  it('places the New ZeMA folded roof completely above its main volume', () => {
+    const zema = build('new-zema');
+    const volume = zema.visible.getObjectByName('new-zema:volume:1')!;
+    const roof = zema.visible.getObjectByName('new-zema:folded-roof')!;
+
+    expect(worldBox(roof).min.y).toBeGreaterThanOrEqual(worldBox(volume).max.y);
   });
 
   it('disposes every owned geometry and proxy material once without disposing palette materials', () => {
