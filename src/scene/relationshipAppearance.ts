@@ -31,6 +31,13 @@ function assignMaterials(object: Renderable, materials: readonly THREE.Material[
   object.material = Array.isArray(object.material) ? [...materials] : materials[0]!;
 }
 
+function isSelectionCue(object: THREE.Object3D): boolean {
+  for (let current: THREE.Object3D | null = object; current; current = current.parent) {
+    if (current.name === 'selection-edges' || current.name === 'selection-marker') return true;
+  }
+  return false;
+}
+
 function opacityFor(emphasis: Exclude<Emphasis, 'normal'>, opacity: number): number {
   if (emphasis === 'active') return opacity;
   if (emphasis === 'preview') return opacity * 0.72;
@@ -71,18 +78,20 @@ export function createRelationshipAppearance(
 
   function cacheObjectMaterials(root: THREE.Object3D): void {
     root.traverse((object) => {
-      if (!isRenderable(object)) return;
+      if (!isRenderable(object) || isSelectionCue(object)) return;
       for (const material of materialsOf(object)) stateFor(material);
     });
   }
 
   function applyObject(root: THREE.Object3D, emphasis: Emphasis): void {
     root.traverse((object) => {
-      if (!isRenderable(object)) return;
-      assignMaterials(object, materialsOf(object).map((material) => {
-        const state = stateFor(material);
-        return emphasis === 'normal' ? state.original : state.variants[emphasis];
-      }));
+      if (!isRenderable(object) || isSelectionCue(object)) return;
+      const materials = materialsOf(object);
+      const resolved = materials.map((material) => {
+        const state = stateByMaterial.get(material);
+        return state ? (emphasis === 'normal' ? state.original : state.variants[emphasis]) : material;
+      });
+      if (resolved.some((material, index) => material !== materials[index])) assignMaterials(object, resolved);
     });
   }
 
@@ -101,20 +110,29 @@ export function createRelationshipAppearance(
   return {
     apply(view: RelationView): void {
       if (disposed) return;
-      const incident = new Set<string>();
+      const active = new Set<string>();
+      const preview = new Set<string>();
+      if (view.previewId) preview.add(view.previewId);
       for (const route of routes) {
         const emphasis = routeEmphasis(route, view);
         route.userData.emphasis = emphasis;
         if (emphasis === 'active') {
-          incident.add(route.userData.sourceId as string);
-          incident.add(route.userData.targetId as string);
+          active.add(route.userData.sourceId as string);
+          active.add(route.userData.targetId as string);
+        } else if (emphasis === 'preview') {
+          preview.add(route.userData.sourceId as string);
+          preview.add(route.userData.targetId as string);
         }
         applyObject(route, emphasis);
       }
       for (const [id, visual] of visuals) {
-        const emphasis: Emphasis = view.mode === 'incident' && id !== view.entityId && !incident.has(id)
-          ? 'receded'
-          : 'normal';
+        const emphasis: Emphasis = view.mode !== 'incident'
+          ? 'normal'
+          : preview.has(id)
+            ? 'preview'
+            : id === view.entityId || active.has(id)
+              ? 'normal'
+              : 'receded';
         visual.userData.emphasis = emphasis;
         applyObject(visual, emphasis);
       }
