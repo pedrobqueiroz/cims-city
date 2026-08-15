@@ -213,6 +213,17 @@ describe('createLabelLayer', () => {
     expect(label(container, 'two').dataset.selected).toBe('true');
   });
 
+  it('exposes aria-current on the selected label for screen readers', () => {
+    const entities = [entity('one', 'hub'), entity('two', 'hub')];
+    const { container, layer } = harness(entities, { one: [-2, 0, 0], two: [2, 0, 0] });
+    layer.update(800, 600, 'one');
+    expect(label(container, 'one').getAttribute('aria-current')).toBe('true');
+    expect(label(container, 'two').hasAttribute('aria-current')).toBe(false);
+    layer.update(800, 600, 'two');
+    expect(label(container, 'one').hasAttribute('aria-current')).toBe(false);
+    expect(label(container, 'two').getAttribute('aria-current')).toBe('true');
+  });
+
   it('routes label button activation to selection', () => {
     const entities = [entity('select-me', 'hub', 'Select me')];
     const { container, onSelect } = harness(entities, { 'select-me': [0, 0, 0] });

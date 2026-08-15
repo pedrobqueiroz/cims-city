@@ -121,6 +121,8 @@ export function createLabelLayer(
       const visibleText = portrait ? options.portraitText?.[entry.entity.id] ?? normalText : normalText;
       if (entry.button.textContent !== visibleText) entry.button.textContent = visibleText;
       entry.button.dataset.selected = String(entry.entity.id === selectedId);
+      if (entry.entity.id === selectedId) entry.button.setAttribute('aria-current', 'true');
+      else entry.button.removeAttribute('aria-current');
     }
     const candidates = entries.filter((entry) => {
       if (entry.entity.id === selectedId || entry.entity.id === previewId) return true;
