@@ -141,18 +141,18 @@ describe('CameraController', () => {
     expect(orbit.enabled).toBe(true);
     expect(orbit.minDistance).toBe(24);
     expect(orbit.maxDistance).toBeGreaterThanOrEqual(camera.position.distanceTo(orbit.target));
-    expect(orbit.minPolarAngle).toBeCloseTo(35 * DEG, 10);
-    expect(orbit.maxPolarAngle).toBeCloseTo(72 * DEG, 10);
+    expect(orbit.minPolarAngle).toBeCloseTo(25 * DEG, 10);
+    expect(orbit.maxPolarAngle).toBeCloseTo(85 * DEG, 10);
   });
 
   it('bounds manual exploration without panning', () => {
     const { orbit } = createHarness();
 
     expect(orbit.enablePan).toBe(false);
-    expect(orbit.minAzimuthAngle).toBe(-Math.PI / 2);
-    expect(orbit.maxAzimuthAngle).toBe(Math.PI / 2);
-    expect(orbit.minPolarAngle).toBeCloseTo(35 * DEG, 10);
-    expect(orbit.maxPolarAngle).toBeCloseTo(72 * DEG, 10);
+    expect(orbit.minAzimuthAngle).toBe(-Math.PI);
+    expect(orbit.maxAzimuthAngle).toBe(Math.PI);
+    expect(orbit.minPolarAngle).toBeCloseTo(25 * DEG, 10);
+    expect(orbit.maxPolarAngle).toBeCloseTo(85 * DEG, 10);
   });
 
   it('authors a complete portrait overview and reevaluates aspect on the next Overview action', () => {
@@ -194,7 +194,7 @@ describe('CameraController', () => {
     expect(camera.position.distanceTo(orbit.target)).toBeLessThanOrEqual(22);
     expect(orbit.enabled).toBe(true);
     expect(orbit.minDistance).toBe(7);
-    expect(orbit.maxDistance).toBe(22);
+    expect(orbit.maxDistance).toBe(45);
   });
 
   it('finishes guided focus travel in 400ms', () => {
@@ -256,7 +256,7 @@ describe('CameraController', () => {
     expectVector(camera.position, localPosition(seiFocus.target, 58).toArray());
     expect(camera.position.distanceTo(orbit.target)).toBeCloseTo(58, 10);
     expect(orbit.minDistance).toBe(24);
-    expect(orbit.maxDistance).toBe(100);
+    expect(orbit.maxDistance).toBe(120);
     expect(updates.count).toBe(constructorUpdates + 1);
   });
 
@@ -281,12 +281,12 @@ describe('CameraController', () => {
 
     expect(updates.count).toBe(constructorUpdates);
     expect(controller.isTransitioning).toBe(true);
-    expect(orbit.maxDistance).toBe(100);
+    expect(orbit.maxDistance).toBe(150);
 
     controller.update(400);
     expect(updates.count).toBe(constructorUpdates + 1);
     expect(camera.position.distanceTo(orbit.target)).toBeGreaterThanOrEqual(15);
-    expect(orbit.maxDistance).toBe(22);
+    expect(orbit.maxDistance).toBe(45);
 
     controller.showOverview(500);
     controller.update(900);
@@ -366,7 +366,7 @@ describe('CameraController', () => {
     expectVector(camera.position, localPosition(seiFocus.target, 58).toArray());
     expect(camera.position.distanceTo(orbit.target)).toBeCloseTo(58, 10);
     expect(orbit.minDistance).toBe(24);
-    expect(orbit.maxDistance).toBe(100);
+    expect(orbit.maxDistance).toBe(120);
     expect(updates.count).toBe(constructorUpdates + 1);
     expect(continuous).toEqual([]);
   });
@@ -473,14 +473,14 @@ describe('CameraController', () => {
     expectVector(camera.up, [0, 1, 0]);
     expect(cameraRight.y).toBeCloseTo(0, 10);
     expect(orbit.minDistance).toBe(7);
-    expect(orbit.maxDistance).toBe(22);
-    expect(orbit.minPolarAngle).toBeCloseTo(35 * DEG, 10);
-    expect(orbit.maxPolarAngle).toBeCloseTo(72 * DEG, 10);
+    expect(orbit.maxDistance).toBe(45);
+    expect(orbit.minPolarAngle).toBeCloseTo(25 * DEG, 10);
+    expect(orbit.maxPolarAngle).toBeCloseTo(85 * DEG, 10);
 
     controller.showOverview();
     expect(orbit.minDistance).toBe(24);
-    expect(orbit.maxDistance).toBe(100);
-    expect(orbit.minPolarAngle).toBeCloseTo(35 * DEG, 10);
-    expect(orbit.maxPolarAngle).toBeCloseTo(72 * DEG, 10);
+    expect(orbit.maxDistance).toBe(150);
+    expect(orbit.minPolarAngle).toBeCloseTo(25 * DEG, 10);
+    expect(orbit.maxPolarAngle).toBeCloseTo(85 * DEG, 10);
   });
 });

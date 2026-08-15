@@ -3,10 +3,10 @@ import type { LayoutNode } from '../scene/layout';
 import { fitPerspectiveView, type CameraPose, type PerspectiveFitInput } from './cameraFraming';
 
 const TRANSITION_DURATION_MS = 400;
-const MIN_POLAR_ANGLE = (35 * Math.PI) / 180;
-const MAX_POLAR_ANGLE = (72 * Math.PI) / 180;
-const MIN_AZIMUTH_ANGLE = -Math.PI / 2;
-const MAX_AZIMUTH_ANGLE = Math.PI / 2;
+const MIN_POLAR_ANGLE = (25 * Math.PI) / 180;
+const MAX_POLAR_ANGLE = (85 * Math.PI) / 180;
+const MIN_AZIMUTH_ANGLE = -Math.PI;
+const MAX_AZIMUTH_ANGLE = Math.PI;
 const OVERVIEW_TARGET = new Vector3(0, 2, 0);
 const LANDSCAPE_OVERVIEW_DIRECTION = new Vector3(52, 44, 66).normalize();
 const PORTRAIT_OVERVIEW_DIRECTION = new Vector3(82, 96, 106).normalize();
@@ -203,7 +203,7 @@ export class CameraController {
     this.orbit.minDistance = 24;
     const authoredDistance = this.camera.position.distanceTo(this.orbit.target);
     this.orbit.maxDistance = Math.min(
-      Math.max(100, Math.ceil(authoredDistance)),
+      Math.max(150, Math.ceil(authoredDistance)),
       this.camera.far - 1,
     );
   }
@@ -211,13 +211,13 @@ export class CameraController {
   private applyContextLimits(): void {
     this.applyManualLimits();
     this.orbit.minDistance = 24;
-    this.orbit.maxDistance = 100;
+    this.orbit.maxDistance = 120;
   }
 
   private applyLocalLimits(): void {
     this.applyManualLimits();
     this.orbit.minDistance = 7;
-    this.orbit.maxDistance = 22;
+    this.orbit.maxDistance = 45;
   }
 
   private applyFreeExploreLimits(): void {
