@@ -286,6 +286,7 @@ export function mountNeighborhood(root: HTMLElement, options: MountNeighborhoodO
   const shell: AppShell = createAppShell(region, ENTITIES, {
     onSelect: (id) => { routeSelection(id, 'navigator'); },
     onOverview: showOverview,
+    onBack: showOverview,
     onReducedMotionChange: updateReducedMotion,
   });
   shell.setReducedMotion(reducedMotion);
@@ -303,6 +304,9 @@ export function mountNeighborhood(root: HTMLElement, options: MountNeighborhoodO
   const initialUrlState = history.read();
   if (initialUrlState.selectedId) {
     selectedId = initialUrlState.selectedId;
+    shell.setSelected(selectedId);
+  } else {
+    shell.setSelected(null);
   }
 
   const disposeMedia = factories.mediaPreferences(window, (prefs) => {
