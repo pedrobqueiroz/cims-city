@@ -321,7 +321,10 @@ export function mountNeighborhood(root: HTMLElement, options: MountNeighborhoodO
   };
 
   try {
-    runtime = factories.runtime(canvasHost, { maxDpr: quality.maxDpr });
+    runtime = factories.runtime(canvasHost, {
+      maxDpr: quality.maxDpr,
+      beforeRender: () => { controls?.update(); },
+    });
     cleanup.push(() => { runtime?.dispose(); });
 
     const palette = factories.palette();

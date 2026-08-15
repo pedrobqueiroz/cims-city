@@ -21,6 +21,7 @@ export interface RuntimeOptions {
   resizeObserverFactory?: (callback: ResizeObserverCallback) => Pick<ResizeObserver, 'observe' | 'disconnect'>;
   requestAnimationFrame?: typeof window.requestAnimationFrame;
   cancelAnimationFrame?: typeof window.cancelAnimationFrame;
+  beforeRender?: () => void;
 }
 
 export interface SceneRuntime {
@@ -78,6 +79,7 @@ export function createSceneRuntime(container: HTMLElement, options: RuntimeOptio
     frameId = undefined;
     if (disposed) return;
     staticRenderRequested = false;
+    options.beforeRender?.();
     renderer.render(scene, camera);
     if (continuousReasons.size > 0) scheduleFrame();
   }
