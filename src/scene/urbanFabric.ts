@@ -9,47 +9,47 @@ interface ContextBuilding {
 
 const CONTEXT_BUILDINGS: readonly ContextBuilding[] = [
   // North of CiMS (visible from default camera)
-  { position: [-30, 0, -38], size: [6, 2.4, 4], material: 'context' },
-  { position: [-18, 0, -38], size: [5, 3.1, 4.5], material: 'groupShell' },
-  { position: [-8, 0, -38], size: [7, 2.8, 5], material: 'context' },
-  { position: [5, 0, -38], size: [5.5, 2.2, 4], material: 'groupShell' },
-  { position: [18, 0, -38], size: [6, 3.5, 4.5], material: 'context' },
+  { position: [-30, 0, -38], size: [10, 4.5, 8], material: 'context' },
+  { position: [-18, 0, -38], size: [8, 5.5, 7], material: 'groupShell' },
+  { position: [-8, 0, -38], size: [12, 5.0, 9], material: 'context' },
+  { position: [5, 0, -38], size: [9, 4.0, 7], material: 'groupShell' },
+  { position: [18, 0, -38], size: [11, 6.0, 8], material: 'context' },
 
   // East of HyCatt/New ZeMA
-  { position: [55, 0, -10], size: [5, 2.6, 4], material: 'context' },
-  { position: [55, 0, 5], size: [6, 3.2, 5], material: 'groupShell' },
-  { position: [55, 0, 20], size: [5, 2.4, 4], material: 'context' },
-  { position: [55, 0, 35], size: [7, 2.8, 4.5], material: 'groupShell' },
+  { position: [55, 0, -10], size: [8, 4.5, 7], material: 'context' },
+  { position: [55, 0, 5], size: [10, 5.5, 8], material: 'groupShell' },
+  { position: [55, 0, 20], size: [8, 4.0, 7], material: 'context' },
+  { position: [55, 0, 35], size: [12, 5.0, 8], material: 'groupShell' },
 
   // South of htw saar
-  { position: [-15, 0, 50], size: [6, 2.4, 4], material: 'context' },
-  { position: [0, 0, 50], size: [5, 3.0, 4.5], material: 'groupShell' },
-  { position: [15, 0, 50], size: [7, 2.6, 5], material: 'context' },
-  { position: [30, 0, 50], size: [5.5, 2.2, 4], material: 'groupShell' },
+  { position: [-15, 0, 50], size: [10, 4.5, 7], material: 'context' },
+  { position: [0, 0, 50], size: [8, 5.0, 8], material: 'groupShell' },
+  { position: [15, 0, 50], size: [12, 4.5, 9], material: 'context' },
+  { position: [30, 0, 50], size: [9, 4.0, 7], material: 'groupShell' },
 
   // West of UdS
-  { position: [-58, 0, 20], size: [5, 2.8, 4], material: 'context' },
-  { position: [-58, 0, 35], size: [6, 3.4, 4.5], material: 'groupShell' },
-  { position: [-58, 0, 48], size: [5, 2.2, 4], material: 'context' },
+  { position: [-58, 0, 20], size: [8, 5.0, 7], material: 'context' },
+  { position: [-58, 0, 35], size: [10, 6.0, 8], material: 'groupShell' },
+  { position: [-58, 0, 48], size: [8, 4.0, 7], material: 'context' },
 
   // Between districts (closer to campus, more visible)
-  { position: [0, 0, -25], size: [5, 2.8, 4], material: 'context' },
-  { position: [15, 0, -20], size: [4.5, 3.2, 4], material: 'groupShell' },
-  { position: [-15, 0, 15], size: [5, 2.6, 4], material: 'context' },
-  { position: [20, 0, 25], size: [4, 2.4, 3.5], material: 'groupShell' },
-  { position: [-25, 0, 25], size: [5, 3.0, 4], material: 'context' },
-  { position: [35, 0, -15], size: [4.5, 2.8, 4], material: 'groupShell' },
-  { position: [-35, 0, -15], size: [5, 2.6, 4], material: 'context' },
+  { position: [0, 0, -25], size: [8, 5.0, 7], material: 'context' },
+  { position: [15, 0, -20], size: [7, 5.5, 6], material: 'groupShell' },
+  { position: [-15, 0, 15], size: [8, 4.5, 7], material: 'context' },
+  { position: [20, 0, 25], size: [7, 4.0, 6], material: 'groupShell' },
+  { position: [-25, 0, 25], size: [8, 5.0, 7], material: 'context' },
+  { position: [35, 0, -15], size: [7, 4.5, 6], material: 'groupShell' },
+  { position: [-35, 0, -15], size: [8, 4.5, 7], material: 'context' },
 
   // Far context (beyond SEI land)
-  { position: [-65, 0, -20], size: [6, 3.0, 5], material: 'context' },
-  { position: [-65, 0, 0], size: [5, 2.4, 4], material: 'groupShell' },
-  { position: [62, 0, -25], size: [7, 2.8, 5], material: 'context' },
-  { position: [62, 0, 10], size: [5, 3.2, 4.5], material: 'groupShell' },
-  { position: [0, 0, -48], size: [6, 2.6, 5], material: 'context' },
-  { position: [20, 0, -48], size: [5, 3.0, 4], material: 'groupShell' },
-  { position: [40, 0, 55], size: [6, 2.4, 5], material: 'context' },
-  { position: [-20, 0, 55], size: [5, 2.8, 4.5], material: 'groupShell' },
+  { position: [-65, 0, -20], size: [10, 5.5, 8], material: 'context' },
+  { position: [-65, 0, 0], size: [8, 4.0, 7], material: 'groupShell' },
+  { position: [62, 0, -25], size: [12, 5.0, 9], material: 'context' },
+  { position: [62, 0, 10], size: [8, 5.5, 7], material: 'groupShell' },
+  { position: [0, 0, -48], size: [10, 4.5, 8], material: 'context' },
+  { position: [20, 0, -48], size: [8, 5.0, 7], material: 'groupShell' },
+  { position: [40, 0, 55], size: [10, 4.5, 8], material: 'context' },
+  { position: [-20, 0, 55], size: [8, 5.0, 7], material: 'groupShell' },
 ];
 
 interface StreetSegment {

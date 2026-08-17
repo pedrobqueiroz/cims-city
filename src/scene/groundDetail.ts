@@ -8,23 +8,23 @@ interface SidewalkSegment {
 
 const SIDEWALK_SEGMENTS: readonly SidewalkSegment[] = [
   // Along CiMS district south edge
-  { position: [-24, 0.2, 16], size: [48, 0.4, 2.0] },
+  { position: [-24, 0.3, 16], size: [48, 0.6, 3.0] },
   // Along CiMS district east edge
-  { position: [-1, 0.2, -6], size: [2.0, 0.4, 50] },
+  { position: [-1, 0.3, -6], size: [3.0, 0.6, 50] },
   // Along HyCatt district west edge
-  { position: [12, 0.2, 15], size: [2.0, 0.4, 30] },
+  { position: [12, 0.3, 15], size: [3.0, 0.6, 30] },
   // Along New ZeMA district south edge
-  { position: [27, 0.2, -7], size: [38, 0.4, 2.0] },
+  { position: [27, 0.3, -7], size: [38, 0.6, 3.0] },
   // Along UdS district east edge
-  { position: [-31, 0.2, 35], size: [2.0, 0.4, 17] },
+  { position: [-31, 0.3, 35], size: [3.0, 0.6, 17] },
   // Along htw saar district north edge
-  { position: [-6, 0.2, 28], size: [29, 0.4, 2.0] },
+  { position: [-6, 0.3, 28], size: [29, 0.6, 3.0] },
   // Plaza in front of CiMS hub
-  { position: [-24, 0.15, 0], size: [16, 0.3, 10] },
+  { position: [-24, 0.2, 0], size: [20, 0.4, 14] },
   // Plaza between HyCatt and New ZeMA
-  { position: [28, 0.15, -5], size: [10, 0.3, 8] },
+  { position: [28, 0.2, -5], size: [14, 0.4, 12] },
   // Central plaza
-  { position: [0, 0.15, 10], size: [12, 0.3, 8] },
+  { position: [0, 0.2, 10], size: [16, 0.4, 12] },
 ];
 
 interface PlantedArea {
@@ -81,15 +81,15 @@ export function createGroundDetail(palette: MaterialPalette): THREE.Group {
 
   // Road markings (center lines on streets)
   const markingPositions: Array<{ position: readonly [number, number, number]; length: number; rotation: number }> = [
-    { position: [-24, 0.12, 22], length: 48, rotation: 0 },
-    { position: [8, 0.12, -6], length: 50, rotation: Math.PI / 2 },
-    { position: [28, 0.12, -5], length: 25, rotation: 0 },
+    { position: [-24, 0.15, 22], length: 48, rotation: 0 },
+    { position: [8, 0.15, -6], length: 50, rotation: Math.PI / 2 },
+    { position: [28, 0.15, -5], length: 25, rotation: 0 },
   ];
 
   for (let i = 0; i < markingPositions.length; i++) {
     const mk = markingPositions[i]!;
     const marking = new THREE.Mesh(
-      new THREE.BoxGeometry(mk.length, 0.08, 0.3),
+      new THREE.BoxGeometry(mk.length, 0.12, 0.5),
       palette.selectionEdge,
     );
     marking.position.set(mk.position[0], mk.position[1], mk.position[2]);
