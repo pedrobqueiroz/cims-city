@@ -8,7 +8,7 @@ interface ContextBuilding {
 }
 
 const CONTEXT_BUILDINGS: readonly ContextBuilding[] = [
-  // North of CiMS
+  // North of CiMS (visible from default camera)
   { position: [-30, 0, -38], size: [6, 2.4, 4], material: 'context' },
   { position: [-18, 0, -38], size: [5, 3.1, 4.5], material: 'groupShell' },
   { position: [-8, 0, -38], size: [7, 2.8, 5], material: 'context' },
@@ -31,6 +31,15 @@ const CONTEXT_BUILDINGS: readonly ContextBuilding[] = [
   { position: [-58, 0, 20], size: [5, 2.8, 4], material: 'context' },
   { position: [-58, 0, 35], size: [6, 3.4, 4.5], material: 'groupShell' },
   { position: [-58, 0, 48], size: [5, 2.2, 4], material: 'context' },
+
+  // Between districts (closer to campus, more visible)
+  { position: [0, 0, -25], size: [5, 2.8, 4], material: 'context' },
+  { position: [15, 0, -20], size: [4.5, 3.2, 4], material: 'groupShell' },
+  { position: [-15, 0, 15], size: [5, 2.6, 4], material: 'context' },
+  { position: [20, 0, 25], size: [4, 2.4, 3.5], material: 'groupShell' },
+  { position: [-25, 0, 25], size: [5, 3.0, 4], material: 'context' },
+  { position: [35, 0, -15], size: [4.5, 2.8, 4], material: 'groupShell' },
+  { position: [-35, 0, -15], size: [5, 2.6, 4], material: 'context' },
 
   // Far context (beyond SEI land)
   { position: [-65, 0, -20], size: [6, 3.0, 5], material: 'context' },

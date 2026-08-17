@@ -10,9 +10,9 @@ export function createTree(type: TreeType, palette: MaterialPalette): THREE.Grou
   tree.name = `tree:${type}`;
 
   // Trunk
-  const trunkHeight = type === 'deciduous' ? 2.2 : 2.8;
+  const trunkHeight = type === 'deciduous' ? 2.8 : 3.5;
   const trunk = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.12, 0.18, trunkHeight, 6),
+    new THREE.CylinderGeometry(0.15, 0.22, trunkHeight, 6),
     palette.darkMetal,
   );
   trunk.position.y = trunkHeight / 2;
@@ -24,10 +24,10 @@ export function createTree(type: TreeType, palette: MaterialPalette): THREE.Grou
   if (type === 'deciduous') {
     // Spherical crown (icosahedron for low-poly look)
     const crown = new THREE.Mesh(
-      new THREE.IcosahedronGeometry(1.6, 1),
+      new THREE.IcosahedronGeometry(2.2, 1),
       palette.context,
     );
-    crown.position.y = trunkHeight + 1.0;
+    crown.position.y = trunkHeight + 1.4;
     crown.castShadow = true;
     crown.receiveShadow = true;
     crown.name = 'crown';
@@ -35,10 +35,10 @@ export function createTree(type: TreeType, palette: MaterialPalette): THREE.Grou
   } else {
     // Conical crown (cone)
     const crown = new THREE.Mesh(
-      new THREE.ConeGeometry(1.2, 3.2, 6),
+      new THREE.ConeGeometry(1.6, 4.0, 6),
       palette.sma,
     );
-    crown.position.y = trunkHeight + 1.6;
+    crown.position.y = trunkHeight + 2.0;
     crown.castShadow = true;
     crown.receiveShadow = true;
     crown.name = 'crown';
@@ -53,16 +53,16 @@ export function createBush(palette: MaterialPalette): THREE.Group {
   const bush = new THREE.Group();
   bush.name = 'bush';
 
-  // Three small spheres clustered together
+  // Three spheres clustered together
   const positions: Array<[number, number, number]> = [
-    [0, 0.35, 0],
-    [0.4, 0.3, 0.3],
-    [-0.3, 0.28, -0.25],
+    [0, 0.5, 0],
+    [0.5, 0.4, 0.4],
+    [-0.4, 0.4, -0.3],
   ];
 
   for (let i = 0; i < positions.length; i++) {
     const sphere = new THREE.Mesh(
-      new THREE.SphereGeometry(0.35 + i * 0.05, 6, 4),
+      new THREE.SphereGeometry(0.5 + i * 0.08, 6, 4),
       palette.context,
     );
     sphere.position.set(positions[i]![0], positions[i]![1], positions[i]![2]);
