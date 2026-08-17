@@ -3,9 +3,12 @@ import type { AtlasScopeId } from '../data/schema';
 import type { NeighborhoodEntity, RelationshipKind } from '../data/schema';
 import { DISTRICT_LAYOUT, scopeBounds as atlasScopeBounds, type DistrictId } from './atlasLayout';
 import { createEntityBuilding, disposeEntityVisual, type EntityVisual } from './buildings';
+import { createGroundDetail, disposeGroundDetail } from './groundDetail';
 import type { LayoutNode } from './layout';
 import type { MaterialPalette } from './materials';
 import { createRoute, disposeRoute } from './routes';
+import { createUrbanFabric, disposeUrbanFabric } from './urbanFabric';
+import { createTree, createBush, disposeVegetation } from './vegetation';
 
 export interface CampusVisual {
   root: THREE.Group;
@@ -205,6 +208,51 @@ export function createCampus(args: {
     }
   }
   const routes = createRoutes(args.entities, args.layout, args.palette, routeContainers);
+  const urbanFabric = createUrbanFabric(args.palette, contextDensity);
+  const groundDetail = createGroundDetail(args.palette);
+
+  // Create vegetation instances
+  const vegetationGroup = group('vegetation');
+  const treePositions: Array<{ pos: [number, number]; type: 'deciduous' | 'conifer' }> = [
+    { pos: [-36, -18], type: 'deciduous' },
+    { pos: [46, 22], type: 'conifer' },
+    { pos: [-21, -31], type: 'deciduous' },
+    { pos: [16, 31], type: 'conifer' },
+    { pos: [2, -34], type: 'deciduous' },
+    { pos: [-9, 32], type: 'conifer' },
+    { pos: [25, -27], type: 'deciduous' },
+    { pos: [-31, 20], type: 'conifer' },
+    { pos: [37, -7], type: 'deciduous' },
+    { pos: [8, 25], type: 'conifer' },
+    { pos: [14, -31], type: 'deciduous' },
+    { pos: [-21, 28], type: 'conifer' },
+    { pos: [37, 6], type: 'deciduous' },
+    { pos: [-31, -26], type: 'conifer' },
+    { pos: [27, 27], type: 'deciduous' },
+    { pos: [-10, -34], type: 'conifer' },
+    { pos: [44, -28], type: 'deciduous' },
+    { pos: [4, 33], type: 'conifer' },
+  ];
+  const bushPositions: Array<[number, number]> = [
+    [-20, 10], [15, -15], [35, 25], [-40, 30], [0, -20],
+    [20, 10], [-10, 25], [30, -10], [-25, -15], [10, 35],
+  ];
+  const vegetationDisposers: Array<() => void> = [];
+  if (contextDensity > 0) {
+    for (const { pos, type } of treePositions) {
+      const tree = createTree(type, args.palette);
+      tree.position.set(pos[0], 0, pos[1]);
+      vegetationGroup.add(tree);
+      vegetationDisposers.push(() => disposeVegetation(tree));
+    }
+    for (const pos of bushPositions) {
+      const bush = createBush(args.palette);
+      bush.position.set(pos[0], 0, pos[1]);
+      vegetationGroup.add(bush);
+      vegetationDisposers.push(() => disposeVegetation(bush));
+    }
+  }
+
   if (landVisual) root.add(landVisual.root);
   root.add(
     ...districtGroups.values(),
@@ -212,6 +260,9 @@ export function createCampus(args: {
     routeContainers.coordinates,
     routeContainers.adjacent,
     routeContainers.collaborates,
+    urbanFabric,
+    groundDetail,
+    vegetationGroup,
     createContext(args.palette, contextDensity, ownedGeometries),
   );
   const scopeBounds = new Map<AtlasScopeId, THREE.Box3>([
@@ -229,6 +280,9 @@ export function createCampus(args: {
     dispose(): void {
       if (disposed) return;
       disposed = true;
+      for (const disposer of vegetationDisposers) disposer();
+      disposeGroundDetail(groundDetail);
+      disposeUrbanFabric(urbanFabric);
       for (const geometry of [...ownedGeometries].reverse()) geometry.dispose();
       for (const route of [...routes].reverse()) disposeRoute(route);
       for (const visual of [...entityVisuals.values()].reverse()) disposeEntityVisual(visual);
