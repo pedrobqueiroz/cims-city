@@ -44,14 +44,34 @@ function motifGroup(motif: Motif): THREE.Group {
 function createResearchShell(id: string, palette: MaterialPalette): THREE.Group {
   const shell = new THREE.Group();
   shell.name = `shell:${id}`;
-  shell.userData = { footprint: '10x7', wallHeight: 4.8 };
+  shell.userData = { footprint: '10x7', wallHeight: 4.8, plan: 'L-plan' };
 
+  // Main volume (shifted left)
   shell.add(
-    mesh(new THREE.BoxGeometry(10, 0.3, 7), palette.darkMetal, 'shell:plinth', [0, 0.15, 0]),
-    mesh(new THREE.BoxGeometry(10, 4.5, 7), palette.groupShell, 'shell:walls', [0, 2.55, 0]),
-    mesh(new THREE.BoxGeometry(9.9, 0.72, 7), palette.glass, 'shell:glazing-band', [0, 3.25, 0]),
-    mesh(new THREE.BoxGeometry(1.8, 2.2, 0.16), palette.darkMetal, 'shell:entrance', [0, 1.4, 3.42]),
+    mesh(new THREE.BoxGeometry(7, 0.3, 7), palette.darkMetal, 'shell:plinth-main', [-1.5, 0.15, 0]),
+    mesh(new THREE.BoxGeometry(7, 4.5, 7), palette.groupShell, 'shell:walls-main', [-1.5, 2.55, 0]),
+    mesh(new THREE.BoxGeometry(6.9, 0.72, 7), palette.glass, 'shell:glazing-main', [-1.5, 3.25, 0]),
   );
+
+  // Wing (shifted right and back)
+  shell.add(
+    mesh(new THREE.BoxGeometry(4, 0.3, 5), palette.darkMetal, 'shell:plinth-wing', [3, 0.15, -1]),
+    mesh(new THREE.BoxGeometry(4, 3.2, 5), palette.groupShell, 'shell:walls-wing', [3, 1.9, -1]),
+    mesh(new THREE.BoxGeometry(3.9, 0.6, 5), palette.glass, 'shell:glazing-wing', [3, 2.5, -1]),
+  );
+
+  // Entrance canopy at the L corner
+  shell.add(
+    mesh(new THREE.BoxGeometry(2.4, 0.15, 1.0), palette.darkMetal, 'shell:canopy', [0.5, 3.1, 2.9]),
+    mesh(new THREE.BoxGeometry(0.2, 3.1, 0.2), palette.darkMetal, 'shell:column:0', [-0.4, 1.55, 3.2]),
+    mesh(new THREE.BoxGeometry(0.2, 3.1, 0.2), palette.darkMetal, 'shell:column:1', [1.4, 1.55, 3.2]),
+  );
+
+  // Entrance door
+  shell.add(
+    mesh(new THREE.BoxGeometry(1.6, 2.4, 0.16), palette.darkMetal, 'shell:entrance', [0.5, 1.5, 3.42]),
+  );
+
   return shell;
 }
 
@@ -202,14 +222,36 @@ function populateCivicHub(visible: THREE.Group, entity: NeighborhoodEntity, pale
   visible.userData.visualFamily = 'civic-atrium';
   const shell = new THREE.Group();
   shell.name = `shell:${entity.id}`;
+
+  // Main atrium body
   shell.add(
     mesh(new THREE.BoxGeometry(12, 0.3, 8), palette.darkMetal, 'hub:plinth', [0, 0.15, 0]),
     mesh(new THREE.BoxGeometry(11, 2.7, 7), palette.civicHub, 'hub:atrium', [0, 1.65, 0]),
     mesh(new THREE.BoxGeometry(7.5, 1.1, 7.1), palette.glass, 'hub:glazing', [0, 2.42, 0]),
-    mesh(new THREE.BoxGeometry(10, 0.2, 8), palette.darkMetal, 'hub:canopy', [0, 3.15, 0]),
   );
+
+  // Side wing
+  shell.add(
+    mesh(new THREE.BoxGeometry(5, 2.2, 6), palette.civicHub, 'hub:wing', [7, 1.4, -0.5]),
+    mesh(new THREE.BoxGeometry(4.9, 0.5, 6), palette.glass, 'hub:wing-glazing', [7, 2.15, -0.5]),
+  );
+
+  // Entrance canopy with columns
+  shell.add(
+    mesh(new THREE.BoxGeometry(8, 0.18, 3), palette.darkMetal, 'hub:canopy', [0, 3.2, 4.5]),
+    mesh(new THREE.BoxGeometry(0.25, 3.2, 0.25), palette.darkMetal, 'hub:column:0', [-3, 1.6, 5.5]),
+    mesh(new THREE.BoxGeometry(0.25, 3.2, 0.25), palette.darkMetal, 'hub:column:1', [3, 1.6, 5.5]),
+    mesh(new THREE.BoxGeometry(0.25, 3.2, 0.25), palette.darkMetal, 'hub:column:2', [-3, 1.6, 3.5]),
+    mesh(new THREE.BoxGeometry(0.25, 3.2, 0.25), palette.darkMetal, 'hub:column:3', [3, 1.6, 3.5]),
+  );
+
+  // Rooftop mechanical box
+  shell.add(
+    mesh(new THREE.BoxGeometry(3, 0.8, 2), palette.darkMetal, 'hub:rooftop', [0, 3.6, -2]),
+  );
+
   visible.add(shell);
-  return 3.65;
+  return 4.2;
 }
 
 function populateSoftLab(visible: THREE.Group, entity: NeighborhoodEntity, palette: MaterialPalette): number {
@@ -274,45 +316,96 @@ function populateLand(visible: THREE.Group, layout: LayoutNode, palette: Materia
 
 function populateHycatt(visible: THREE.Group, palette: MaterialPalette): number {
   visible.userData.visualFamily = 'hycatt-campus';
+
+  // Main research block
   visible.add(
     mesh(new THREE.BoxGeometry(8, 3.2, 6), palette.context, 'hycatt:mass:0', [-4.5, 1.6, 0]),
     mesh(new THREE.BoxGeometry(7, 4.2, 6), palette.groupShell, 'hycatt:mass:1', [4.5, 2.1, 0]),
+  );
+
+  // Glass link between masses
+  visible.add(
     mesh(new THREE.BoxGeometry(3, 1.1, 2.4), palette.glass, 'hycatt:link', [0, 2.4, 0]),
+  );
+
+  // Landmark tower (octagonal)
+  visible.add(
     mesh(new THREE.CylinderGeometry(1.1, 1.4, 8, 8), palette.darkMetal, 'hycatt:landmark', [8.5, 4, -1]),
   );
-  return 8.6;
+
+  // Side wing
+  visible.add(
+    mesh(new THREE.BoxGeometry(4, 2.8, 4), palette.context, 'hycatt:wing', [-8, 1.4, 2]),
+    mesh(new THREE.BoxGeometry(3.9, 0.6, 4), palette.glass, 'hycatt:wing-glazing', [-8, 2.5, 2]),
+  );
+
+  // Entrance canopy
+  visible.add(
+    mesh(new THREE.BoxGeometry(4, 0.15, 2), palette.darkMetal, 'hycatt:canopy', [0, 3.5, 4]),
+  );
+
+  return 9;
 }
 
 function populateNewZema(visible: THREE.Group, palette: MaterialPalette): number {
   visible.userData.visualFamily = 'new-zema-campus';
+
+  // Four volumes in an asymmetric cluster
   visible.add(
     mesh(new THREE.BoxGeometry(7, 2.4, 5), palette.context, 'new-zema:volume:0', [-6, 1.2, 1]),
     mesh(new THREE.BoxGeometry(6, 3.1, 5), palette.groupShell, 'new-zema:volume:1', [0.5, 1.55, -1]),
     mesh(new THREE.BoxGeometry(5, 2, 4), palette.context, 'new-zema:volume:2', [6, 1, 1.5]),
+    mesh(new THREE.BoxGeometry(3.5, 2.8, 3), palette.groupShell, 'new-zema:volume:3', [4, 1.4, -4]),
   );
+
+  // Folded roof landmark
   const roof = mesh(createFoldedRoofGeometry(), palette.sma, 'new-zema:folded-roof', [0.5, -0.3, -1]);
   roof.scale.set(0.72, 0.72, 0.72);
   roof.rotation.y = -0.12;
   visible.add(roof);
-  return 4.8;
+
+  // Glass link between volumes
+  visible.add(
+    mesh(new THREE.BoxGeometry(2.5, 1.2, 2), palette.glass, 'new-zema:link', [-2.5, 1.8, 0]),
+  );
+
+  return 5.2;
 }
 
 function populateUds(visible: THREE.Group, palette: MaterialPalette): number {
   visible.userData.visualFamily = 'academic-pair';
+
+  // Three volumes for academic campus feel
   visible.add(
     mesh(new THREE.BoxGeometry(7, 3.8, 5), palette.context, 'uds:academic:0', [-4, 1.9, 0]),
     mesh(new THREE.BoxGeometry(6, 5, 5), palette.groupShell, 'uds:academic:1', [4, 2.5, 0]),
+    mesh(new THREE.BoxGeometry(3.5, 2.6, 3.5), palette.context, 'uds:academic:2', [0, 1.3, -4]),
   );
-  return 5.6;
+
+  // Glass connector
+  visible.add(
+    mesh(new THREE.BoxGeometry(2, 1.2, 2), palette.glass, 'uds:connector', [0, 1.8, -0.5]),
+  );
+
+  return 6;
 }
 
 function populateHtwSaar(visible: THREE.Group, palette: MaterialPalette): number {
   visible.userData.visualFamily = 'workshop-tower-pair';
+
+  // Workshop + tower + small annex
   visible.add(
     mesh(new THREE.BoxGeometry(9, 2.8, 6), palette.context, 'htw-saar:workshop', [-3, 1.4, 0]),
     mesh(new THREE.BoxGeometry(3.5, 7, 3.5), palette.darkMetal, 'htw-saar:tower', [5, 3.5, 0]),
+    mesh(new THREE.BoxGeometry(3, 2, 3), palette.groupShell, 'htw-saar:annex', [5, 1, -4]),
   );
-  return 7.6;
+
+  // Entrance canopy
+  visible.add(
+    mesh(new THREE.BoxGeometry(3, 0.12, 1.5), palette.darkMetal, 'htw-saar:canopy', [-3, 2.9, 3.5]),
+  );
+
+  return 7.8;
 }
 
 function contextDimensions(entity: NeighborhoodEntity): readonly [number, number, number] {
