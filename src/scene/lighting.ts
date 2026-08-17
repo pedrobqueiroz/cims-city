@@ -37,7 +37,7 @@ export function createDaylightRig(scene: THREE.Scene, tier: LightingQualityTier)
   const root = new THREE.Group();
   root.name = 'lighting:daylight';
 
-  const sun = new THREE.DirectionalLight('#fff3dc', 2.6);
+  const sun = new THREE.DirectionalLight('#e8eef5', 2.2);
   sun.name = 'light:sun';
   sun.position.set(28, 42, 18);
   sun.target.position.set(0, 0, 0);
@@ -51,7 +51,7 @@ export function createDaylightRig(scene: THREE.Scene, tier: LightingQualityTier)
   sun.shadow.normalBias = 0.025;
   sun.shadow.bias = -0.0002;
 
-  const fill = new THREE.HemisphereLight('#dbe9ee', '#8d938d', 1.25);
+  const fill = new THREE.HemisphereLight('#c5d5e0', '#5a6b5a', 0.9);
   fill.name = 'light:hemisphere';
   fill.castShadow = false;
 
