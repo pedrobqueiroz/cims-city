@@ -38,7 +38,7 @@ const contextPoints: Readonly<Record<'trees' | 'lamps' | 'bollards', readonly Po
   bollards: [
     [-52, -30], [-48, -26], [20, 21], [-9, -27], [9, 40],
     [4, -28], [-4, 28], [-16, 24], [-24, 17],
-    [48, 34], [-44, -21],
+    [48, 34],
   ],
 };
 

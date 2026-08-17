@@ -39,6 +39,208 @@ function mesh(
 // ============================================================================
 
 // ============================================================================
+// ICONIC BUILDING GENERATOR - Egghead-first, futuristic engineering aesthetic
+// ============================================================================
+
+interface BuildingArchetype {
+  type: 'tower' | 'atrium' | 'workshop' | 'laboratory' | 'office';
+  floors: number;
+  hasSolarPanels: boolean;
+  hasAntennas: boolean;
+  hasPipes: boolean;
+  hasTurbines: boolean;
+  hasGlassCurtainWall: boolean;
+  hasLedStrips: boolean;
+  hasSteelFrames: boolean;
+  hasCoolingTowers: boolean;
+  hasSatelliteDishes: boolean;
+  hasWaterTanks: boolean;
+}
+
+function createIconicBuilding(id: string, palette: MaterialPalette, archetype: BuildingArchetype): THREE.Group {
+  const building = new THREE.Group();
+  building.name = `iconic:${id}`;
+
+  const w = archetype.type === 'tower' ? 6 : archetype.type === 'atrium' ? 12 : 8;
+  const d = archetype.type === 'tower' ? 6 : archetype.type === 'atrium' ? 10 : 7;
+  const floorHeight = 3.5;
+  const totalHeight = archetype.floors * floorHeight;
+
+  // Foundation
+  building.add(mesh(
+    new THREE.BoxGeometry(w + 0.6, 0.6, d + 0.6),
+    palette.darkMetal, 'foundation', [0, 0.3, 0],
+  ));
+
+  // Main volume
+  building.add(mesh(
+    new THREE.BoxGeometry(w, totalHeight, d),
+    palette.groupShell, 'main-volume', [0, 0.6 + totalHeight / 2, 0],
+  ));
+
+  // Roof based on type
+  if (archetype.type === 'tower') {
+    // Flat roof with mechanical penthouse
+    building.add(mesh(
+      new THREE.BoxGeometry(w * 0.6, 1.5, d * 0.6),
+      palette.darkMech, 'penthouse', [0, 0.6 + totalHeight + 0.75, 0],
+    ));
+  } else if (archetype.type === 'atrium') {
+    // Glass dome roof
+    building.add(mesh(
+      new THREE.SphereGeometry(w * 0.4, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2),
+      palette.glass, 'dome-roof', [0, 0.6 + totalHeight, 0],
+    ));
+  } else {
+    // Pitched roof
+    const roofGeom = new THREE.BufferGeometry();
+    const hw = w / 2 + 0.3;
+    const hd = d / 2 + 0.3;
+    const ry = 0.6 + totalHeight;
+    const positions = new Float32Array([
+      -hw, ry, -hd,  hw, ry, -hd,  0, ry + 2.5, 0,
+      hw, ry, -hd,  hw, ry, hd,   0, ry + 2.5, 0,
+      hw, ry, hd,   -hw, ry, hd,  0, ry + 2.5, 0,
+      -hw, ry, hd,  -hw, ry, -hd, 0, ry + 2.5, 0,
+    ]);
+    roofGeom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    roofGeom.computeVertexNormals();
+    building.add(mesh(roofGeom, palette.textile, 'roof', [0, 0, 0]));
+  }
+
+  // Windows (2-3 per floor)
+  for (let floor = 0; floor < archetype.floors; floor++) {
+    const windowCount = floor === 0 ? 2 : 3;
+    for (let i = 0; i < windowCount; i++) {
+      const x = -w / 2 + (w / (windowCount + 1)) * (i + 1);
+      const y = 0.6 + floor * floorHeight + floorHeight * 0.5;
+      building.add(mesh(
+        new THREE.BoxGeometry(0.8, 1.0, 0.1),
+        palette.glass, `window:${floor}:${i}`, [x, y, d / 2 + 0.05],
+      ));
+    }
+  }
+
+  // Door
+  building.add(mesh(
+    new THREE.BoxGeometry(1.2, 2.2, 0.15),
+    palette.darkMetal, 'door', [0, 1.7, d / 2 + 0.08],
+  ));
+
+  // Glass curtain wall
+  if (archetype.hasGlassCurtainWall) {
+    building.add(mesh(
+      new THREE.BoxGeometry(w * 0.8, totalHeight * 0.6, 0.1),
+      palette.glass, 'curtain-wall', [0, 0.6 + totalHeight * 0.3, d / 2 + 0.1],
+    ));
+  }
+
+  // Steel frames (exposed structure)
+  if (archetype.hasSteelFrames) {
+    for (let i = 0; i < 4; i++) {
+      const x = (i % 2 === 0 ? -1 : 1) * (w / 2 - 0.1);
+      const z = (i < 2 ? -1 : 1) * (d / 2 - 0.1);
+      building.add(mesh(
+        new THREE.BoxGeometry(0.15, totalHeight + 1, 0.15),
+        palette.darkMetal, `steel-frame:${i}`, [x, 0.6 + (totalHeight + 1) / 2, z],
+      ));
+    }
+  }
+
+  // Solar panels
+  if (archetype.hasSolarPanels) {
+    for (let i = 0; i < 3; i++) {
+      building.add(mesh(
+        new THREE.BoxGeometry(2.0, 0.08, 1.2),
+        palette.electronics, `solar-panel:${i}`,
+        [-3 + i * 3, 0.6 + totalHeight + 0.5, -d / 4],
+      ));
+    }
+  }
+
+  // Antennas
+  if (archetype.hasAntennas) {
+    for (let i = 0; i < 2; i++) {
+      building.add(mesh(
+        new THREE.CylinderGeometry(0.04, 0.04, 4, 6),
+        palette.darkMetal, `antenna:${i}`,
+        [w / 4 * (i === 0 ? -1 : 1), 0.6 + totalHeight + 2, 0],
+      ));
+    }
+  }
+
+  // Pipes/conduits
+  if (archetype.hasPipes) {
+    for (let i = 0; i < 3; i++) {
+      building.add(mesh(
+        new THREE.CylinderGeometry(0.08, 0.08, totalHeight * 0.6, 8),
+        palette.darkMetal, `pipe:${i}`,
+        [-w / 2 - 0.2, 0.6 + totalHeight * 0.3, -d / 3 + i * (d / 3)],
+      ));
+    }
+  }
+
+  // Turbines
+  if (archetype.hasTurbines) {
+    for (let i = 0; i < 2; i++) {
+      building.add(mesh(
+        new THREE.CylinderGeometry(0.4, 0.4, 0.2, 12),
+        palette.darkMetal, `turbine:${i}`,
+        [w / 3 * (i === 0 ? -1 : 1), 0.6 + totalHeight + 1, 0],
+      ));
+      building.add(mesh(
+        new THREE.TorusGeometry(0.5, 0.06, 6, 12),
+        palette.darkMetal, `turbine-ring:${i}`,
+        [w / 3 * (i === 0 ? -1 : 1), 0.6 + totalHeight + 1, 0],
+      ));
+    }
+  }
+
+  // LED strips
+  if (archetype.hasLedStrips) {
+    building.add(mesh(
+      new THREE.BoxGeometry(w, 0.08, 0.08),
+      palette.selectionEdge, 'led-strip:bottom', [0, 0.65, d / 2 + 0.1],
+    ));
+    building.add(mesh(
+      new THREE.BoxGeometry(w, 0.08, 0.08),
+      palette.selectionEdge, 'led-strip:top', [0, 0.6 + totalHeight - 0.04, d / 2 + 0.1],
+    ));
+  }
+
+  // Cooling towers
+  if (archetype.hasCoolingTowers) {
+    for (let i = 0; i < 2; i++) {
+      building.add(mesh(
+        new THREE.CylinderGeometry(0.6, 0.8, 2.5, 8),
+        palette.context, `cooling-tower:${i}`,
+        [w / 3 * (i === 0 ? -1 : 1), 0.6 + totalHeight + 1.25, -d / 3],
+      ));
+    }
+  }
+
+  // Satellite dishes
+  if (archetype.hasSatelliteDishes) {
+    building.add(mesh(
+      new THREE.SphereGeometry(0.5, 8, 4, 0, Math.PI),
+      palette.darkMetal, 'satellite-dish',
+      [w / 4, 0.6 + totalHeight + 0.5, -d / 3],
+    ));
+  }
+
+  // Water tanks
+  if (archetype.hasWaterTanks) {
+    building.add(mesh(
+      new THREE.CylinderGeometry(0.6, 0.6, 1.2, 8),
+      palette.context, 'water-tank',
+      [-w / 4, 0.6 + totalHeight + 0.6, -d / 3],
+    ));
+  }
+
+  return building;
+}
+
+// ============================================================================
 // DIVERSE BUILDING SHAPES - Hateno Village style variety
 // ============================================================================
 
@@ -298,33 +500,45 @@ function createElastocaloricsDistrict(palette: MaterialPalette): THREE.Group {
   const district = new THREE.Group();
   district.name = 'district:elastocalorics';
 
-  // Main round house (thermal research)
-  const mainHouse = createRoundHouse('elastocalorics-main', palette, 3.5, 4.5);
-  mainHouse.position.set(0, 0, 0);
-  district.add(mainHouse);
+  // Main lab - tall tower with solar panels and antennas
+  const mainLab = createIconicBuilding('elastocalorics-main', palette, {
+    type: 'tower', floors: 4,
+    hasSolarPanels: true, hasAntennas: true, hasPipes: false,
+    hasTurbines: false, hasGlassCurtainWall: true, hasLedStrips: true,
+    hasSteelFrames: true, hasCoolingTowers: false, hasSatelliteDishes: true, hasWaterTanks: false,
+  });
+  mainLab.position.set(0, 0, 0);
+  district.add(mainLab);
 
-  // L-shaped workshop
-  const workshop = createLShapedBuilding('elastocalorics-workshop', palette);
-  workshop.position.set(-10, 0, -4);
-  workshop.scale.set(0.8, 0.8, 0.8);
+  // Workshop - industrial with pipes and turbines
+  const workshop = createIconicBuilding('elastocalorics-workshop', palette, {
+    type: 'workshop', floors: 2,
+    hasSolarPanels: false, hasAntennas: false, hasPipes: true,
+    hasTurbines: true, hasGlassCurtainWall: false, hasLedStrips: false,
+    hasSteelFrames: true, hasCoolingTowers: true, hasSatelliteDishes: false, hasWaterTanks: true,
+  });
+  workshop.position.set(-12, 0, -6);
   district.add(workshop);
 
-  // Tower (observation/cooling)
-  const tower = createTower('elastocalorics-tower', palette, 3);
-  tower.position.set(8, 0, -6);
-  district.add(tower);
+  // Office - clean with glass curtain wall
+  const office = createIconicBuilding('elastocalorics-office', palette, {
+    type: 'office', floors: 3,
+    hasSolarPanels: true, hasAntennas: false, hasPipes: false,
+    hasTurbines: false, hasGlassCurtainWall: true, hasLedStrips: true,
+    hasSteelFrames: false, hasCoolingTowers: false, hasSatelliteDishes: false, hasWaterTanks: false,
+  });
+  office.position.set(10, 0, -8);
+  district.add(office);
 
-  // Clustered storage
-  const storage = createClusteredBuilding('elastocalorics-storage', palette);
-  storage.position.set(-5, 0, 10);
-  storage.scale.set(0.7, 0.7, 0.7);
+  // Storage - compact with pipes
+  const storage = createIconicBuilding('elastocalorics-storage', palette, {
+    type: 'workshop', floors: 1,
+    hasSolarPanels: false, hasAntennas: false, hasPipes: true,
+    hasTurbines: false, hasGlassCurtainWall: false, hasLedStrips: false,
+    hasSteelFrames: false, hasCoolingTowers: false, hasSatelliteDishes: false, hasWaterTanks: true,
+  });
+  storage.position.set(-6, 0, 10);
   district.add(storage);
-
-  // Small organic house
-  const smallHouse = createOrganicBuilding('elastocalorics-small', palette);
-  smallHouse.position.set(6, 0, 8);
-  smallHouse.scale.set(0.6, 0.6, 0.6);
-  district.add(smallHouse);
 
   return district;
 }
@@ -333,26 +547,45 @@ function createElectroactivePolymersDistrict(palette: MaterialPalette): THREE.Gr
   const district = new THREE.Group();
   district.name = 'district:electroactive-polymers';
 
-  // Main organic building (polymer research)
-  const mainBuilding = createOrganicBuilding('eap-main', palette);
-  mainBuilding.position.set(0, 0, 0);
-  district.add(mainBuilding);
+  // Main lab - atrium with glass dome
+  const mainLab = createIconicBuilding('eap-main', palette, {
+    type: 'atrium', floors: 2,
+    hasSolarPanels: true, hasAntennas: false, hasPipes: false,
+    hasTurbines: false, hasGlassCurtainWall: true, hasLedStrips: true,
+    hasSteelFrames: true, hasCoolingTowers: false, hasSatelliteDishes: false, hasWaterTanks: false,
+  });
+  mainLab.position.set(0, 0, 0);
+  district.add(mainLab);
 
-  // Round lab
-  const lab = createRoundHouse('eap-lab', palette, 2.8, 3.5);
-  lab.position.set(8, 0, -3);
-  district.add(lab);
-
-  // L-shaped office
-  const office = createLShapedBuilding('eap-office', palette);
-  office.position.set(-8, 0, 5);
-  office.scale.set(0.7, 0.7, 0.7);
-  district.add(office);
-
-  // Tower storage
-  const tower = createTower('eap-tower', palette, 2);
-  tower.position.set(4, 0, 10);
+  // Tower - with antennas and satellite dish
+  const tower = createIconicBuilding('eap-tower', palette, {
+    type: 'tower', floors: 3,
+    hasSolarPanels: false, hasAntennas: true, hasPipes: false,
+    hasTurbines: false, hasGlassCurtainWall: false, hasLedStrips: false,
+    hasSteelFrames: true, hasCoolingTowers: false, hasSatelliteDishes: true, hasWaterTanks: false,
+  });
+  tower.position.set(10, 0, -5);
   district.add(tower);
+
+  // Workshop - with pipes and turbines
+  const workshop = createIconicBuilding('eap-workshop', palette, {
+    type: 'workshop', floors: 2,
+    hasSolarPanels: false, hasAntennas: false, hasPipes: true,
+    hasTurbines: true, hasGlassCurtainWall: false, hasLedStrips: false,
+    hasSteelFrames: false, hasCoolingTowers: true, hasSatelliteDishes: false, hasWaterTanks: false,
+  });
+  workshop.position.set(-10, 0, 6);
+  district.add(workshop);
+
+  // Office - clean with LED strips
+  const office = createIconicBuilding('eap-office', palette, {
+    type: 'office', floors: 2,
+    hasSolarPanels: true, hasAntennas: false, hasPipes: false,
+    hasTurbines: false, hasGlassCurtainWall: true, hasLedStrips: true,
+    hasSteelFrames: false, hasCoolingTowers: false, hasSatelliteDishes: false, hasWaterTanks: false,
+  });
+  office.position.set(5, 0, 10);
+  district.add(office);
 
   return district;
 }
@@ -361,25 +594,44 @@ function createSmartMaterialElectronicsDistrict(palette: MaterialPalette): THREE
   const district = new THREE.Group();
   district.name = 'district:smart-material-electronics';
 
-  // Main tower (electronics research)
-  const tower = createTower('sme-tower', palette, 4);
+  // Main tower - tall with antennas and solar panels
+  const tower = createIconicBuilding('sme-tower', palette, {
+    type: 'tower', floors: 5,
+    hasSolarPanels: true, hasAntennas: true, hasPipes: false,
+    hasTurbines: false, hasGlassCurtainWall: true, hasLedStrips: true,
+    hasSteelFrames: true, hasCoolingTowers: false, hasSatelliteDishes: true, hasWaterTanks: false,
+  });
   tower.position.set(0, 0, 0);
   district.add(tower);
 
-  // Clustered lab
-  const lab = createClusteredBuilding('sme-lab', palette);
-  lab.position.set(-8, 0, -4);
+  // Lab - atrium with glass dome
+  const lab = createIconicBuilding('sme-lab', palette, {
+    type: 'atrium', floors: 2,
+    hasSolarPanels: false, hasAntennas: false, hasPipes: true,
+    hasTurbines: false, hasGlassCurtainWall: true, hasLedStrips: false,
+    hasSteelFrames: true, hasCoolingTowers: false, hasSatelliteDishes: false, hasWaterTanks: false,
+  });
+  lab.position.set(-10, 0, -5);
   district.add(lab);
 
-  // Round workshop
-  const workshop = createRoundHouse('sme-workshop', palette, 3, 3);
-  workshop.position.set(7, 0, 5);
+  // Workshop - industrial with pipes and turbines
+  const workshop = createIconicBuilding('sme-workshop', palette, {
+    type: 'workshop', floors: 2,
+    hasSolarPanels: false, hasAntennas: false, hasPipes: true,
+    hasTurbines: true, hasGlassCurtainWall: false, hasLedStrips: false,
+    hasSteelFrames: true, hasCoolingTowers: true, hasSatelliteDishes: false, hasWaterTanks: true,
+  });
+  workshop.position.set(8, 0, 6);
   district.add(workshop);
 
-  // L-shaped office
-  const office = createLShapedBuilding('sme-office', palette);
-  office.position.set(-4, 0, 8);
-  office.scale.set(0.6, 0.6, 0.6);
+  // Office - clean with LED strips
+  const office = createIconicBuilding('sme-office', palette, {
+    type: 'office', floors: 2,
+    hasSolarPanels: true, hasAntennas: false, hasPipes: false,
+    hasTurbines: false, hasGlassCurtainWall: true, hasLedStrips: true,
+    hasSteelFrames: false, hasCoolingTowers: false, hasSatelliteDishes: false, hasWaterTanks: false,
+  });
+  office.position.set(-5, 0, 10);
   district.add(office);
 
   return district;
@@ -389,27 +641,45 @@ function createSmartTextilesDistrict(palette: MaterialPalette): THREE.Group {
   const district = new THREE.Group();
   district.name = 'district:smart-textiles';
 
-  // Main L-shaped building (textile research)
-  const mainBuilding = createLShapedBuilding('st-main', palette);
-  mainBuilding.position.set(0, 0, 0);
-  district.add(mainBuilding);
+  // Main lab - L-shaped with glass curtain wall
+  const mainLab = createIconicBuilding('st-main', palette, {
+    type: 'office', floors: 3,
+    hasSolarPanels: true, hasAntennas: false, hasPipes: false,
+    hasTurbines: false, hasGlassCurtainWall: true, hasLedStrips: true,
+    hasSteelFrames: true, hasCoolingTowers: false, hasSatelliteDishes: false, hasWaterTanks: false,
+  });
+  mainLab.position.set(0, 0, 0);
+  district.add(mainLab);
 
-  // Organic workshop
-  const workshop = createOrganicBuilding('st-workshop', palette);
-  workshop.position.set(-9, 0, -3);
-  workshop.scale.set(0.8, 0.8, 0.8);
+  // Workshop - with pipes
+  const workshop = createIconicBuilding('st-workshop', palette, {
+    type: 'workshop', floors: 2,
+    hasSolarPanels: false, hasAntennas: false, hasPipes: true,
+    hasTurbines: false, hasGlassCurtainWall: false, hasLedStrips: false,
+    hasSteelFrames: false, hasCoolingTowers: false, hasSatelliteDishes: false, hasWaterTanks: true,
+  });
+  workshop.position.set(-10, 0, -4);
   district.add(workshop);
 
-  // Round storage
-  const storage = createRoundHouse('st-storage', palette, 2.5, 3);
-  storage.position.set(7, 0, -5);
-  district.add(storage);
+  // Tower - with antennas
+  const tower = createIconicBuilding('st-tower', palette, {
+    type: 'tower', floors: 3,
+    hasSolarPanels: false, hasAntennas: true, hasPipes: false,
+    hasTurbines: false, hasGlassCurtainWall: false, hasLedStrips: false,
+    hasSteelFrames: true, hasCoolingTowers: false, hasSatelliteDishes: true, hasWaterTanks: false,
+  });
+  tower.position.set(8, 0, -6);
+  district.add(tower);
 
-  // Clustered small house
-  const smallHouse = createClusteredBuilding('st-small', palette);
-  smallHouse.position.set(-4, 0, 9);
-  smallHouse.scale.set(0.6, 0.6, 0.6);
-  district.add(smallHouse);
+  // Storage - compact
+  const storage = createIconicBuilding('st-storage', palette, {
+    type: 'workshop', floors: 1,
+    hasSolarPanels: false, hasAntennas: false, hasPipes: true,
+    hasTurbines: false, hasGlassCurtainWall: false, hasLedStrips: false,
+    hasSteelFrames: false, hasCoolingTowers: false, hasSatelliteDishes: false, hasWaterTanks: false,
+  });
+  storage.position.set(-5, 0, 10);
+  district.add(storage);
 
   return district;
 }
@@ -418,25 +688,44 @@ function createShapeMemoryAlloysDistrict(palette: MaterialPalette): THREE.Group 
   const district = new THREE.Group();
   district.name = 'district:shape-memory-alloys';
 
-  // Main clustered building (industrial research)
-  const mainBuilding = createClusteredBuilding('sma-main', palette);
-  mainBuilding.position.set(0, 0, 0);
-  district.add(mainBuilding);
+  // Main lab - tower with antennas and cooling towers
+  const mainLab = createIconicBuilding('sma-main', palette, {
+    type: 'tower', floors: 4,
+    hasSolarPanels: false, hasAntennas: true, hasPipes: true,
+    hasTurbines: true, hasGlassCurtainWall: false, hasLedStrips: false,
+    hasSteelFrames: true, hasCoolingTowers: true, hasSatelliteDishes: true, hasWaterTanks: true,
+  });
+  mainLab.position.set(0, 0, 0);
+  district.add(mainLab);
 
-  // Tower workshop
-  const tower = createTower('sma-tower', palette, 3);
-  tower.position.set(-9, 0, -4);
-  district.add(tower);
+  // Workshop - industrial with pipes and turbines
+  const workshop = createIconicBuilding('sma-workshop', palette, {
+    type: 'workshop', floors: 2,
+    hasSolarPanels: false, hasAntennas: false, hasPipes: true,
+    hasTurbines: true, hasGlassCurtainWall: false, hasLedStrips: false,
+    hasSteelFrames: true, hasCoolingTowers: true, hasSatelliteDishes: false, hasWaterTanks: true,
+  });
+  workshop.position.set(-10, 0, -5);
+  district.add(workshop);
 
-  // Round lab
-  const lab = createRoundHouse('sma-lab', palette, 3, 4);
-  lab.position.set(8, 0, -3);
+  // Lab - atrium with glass dome
+  const lab = createIconicBuilding('sma-lab', palette, {
+    type: 'atrium', floors: 2,
+    hasSolarPanels: true, hasAntennas: false, hasPipes: false,
+    hasTurbines: false, hasGlassCurtainWall: true, hasLedStrips: true,
+    hasSteelFrames: true, hasCoolingTowers: false, hasSatelliteDishes: false, hasWaterTanks: false,
+  });
+  lab.position.set(8, 0, -4);
   district.add(lab);
 
-  // L-shaped storage
-  const storage = createLShapedBuilding('sma-storage', palette);
-  storage.position.set(4, 0, 8);
-  storage.scale.set(0.6, 0.6, 0.6);
+  // Storage - compact with pipes
+  const storage = createIconicBuilding('sma-storage', palette, {
+    type: 'workshop', floors: 1,
+    hasSolarPanels: false, hasAntennas: false, hasPipes: true,
+    hasTurbines: false, hasGlassCurtainWall: false, hasLedStrips: false,
+    hasSteelFrames: false, hasCoolingTowers: false, hasSatelliteDishes: false, hasWaterTanks: false,
+  });
+  storage.position.set(5, 0, 10);
   district.add(storage);
 
   return district;
@@ -552,21 +841,35 @@ function populateResearchGroup(visible: THREE.Group, entity: NeighborhoodEntity,
 function populateCivicHub(visible: THREE.Group, entity: NeighborhoodEntity, palette: MaterialPalette): number {
   visible.userData = { visualFamily: 'civic-atrium' };
 
-  // Main hub - large L-shaped building
-  const hub = createLShapedBuilding('cims-hub', palette);
+  // Main hub - large atrium with glass dome
+  const hub = createIconicBuilding('cims-hub', palette, {
+    type: 'atrium', floors: 2,
+    hasSolarPanels: true, hasAntennas: true, hasPipes: false,
+    hasTurbines: false, hasGlassCurtainWall: true, hasLedStrips: true,
+    hasSteelFrames: true, hasCoolingTowers: false, hasSatelliteDishes: true, hasWaterTanks: false,
+  });
   hub.scale.set(1.3, 1.2, 1.3);
   hub.position.set(0, 0, 0);
   visible.add(hub);
 
-  // Admin - round building
-  const admin = createRoundHouse('cims-admin', palette, 3, 4.5);
-  admin.position.set(-10, 0, -5);
+  // Admin building - tower with antennas
+  const admin = createIconicBuilding('cims-admin', palette, {
+    type: 'tower', floors: 3,
+    hasSolarPanels: true, hasAntennas: true, hasPipes: false,
+    hasTurbines: false, hasGlassCurtainWall: false, hasLedStrips: true,
+    hasSteelFrames: true, hasCoolingTowers: false, hasSatelliteDishes: false, hasWaterTanks: false,
+  });
+  admin.position.set(-12, 0, -6);
   visible.add(admin);
 
-  // Meeting hall - organic building
-  const meeting = createOrganicBuilding('cims-meeting', palette);
-  meeting.position.set(9, 0, 4);
-  meeting.scale.set(0.9, 0.9, 0.9);
+  // Meeting hall - workshop with glass curtain wall
+  const meeting = createIconicBuilding('cims-meeting', palette, {
+    type: 'office', floors: 1,
+    hasSolarPanels: false, hasAntennas: false, hasPipes: false,
+    hasTurbines: false, hasGlassCurtainWall: true, hasLedStrips: false,
+    hasSteelFrames: true, hasCoolingTowers: false, hasSatelliteDishes: false, hasWaterTanks: false,
+  });
+  meeting.position.set(10, 0, 5);
   visible.add(meeting);
 
   return 10;
@@ -575,8 +878,13 @@ function populateCivicHub(visible: THREE.Group, entity: NeighborhoodEntity, pale
 function populateSoftLab(visible: THREE.Group, entity: NeighborhoodEntity, palette: MaterialPalette): number {
   visible.userData = { visualFamily: 'soft-lab' };
 
-  // Organic lab building
-  const lab = createOrganicBuilding('soft-robotics-lab', palette);
+  // Lab - atrium with glass dome
+  const lab = createIconicBuilding('soft-robotics-lab', palette, {
+    type: 'atrium', floors: 2,
+    hasSolarPanels: false, hasAntennas: false, hasPipes: true,
+    hasTurbines: false, hasGlassCurtainWall: true, hasLedStrips: false,
+    hasSteelFrames: true, hasCoolingTowers: false, hasSatelliteDishes: false, hasWaterTanks: false,
+  });
   lab.position.set(0, 0, 0);
   visible.add(lab);
 
@@ -586,21 +894,35 @@ function populateSoftLab(visible: THREE.Group, entity: NeighborhoodEntity, palet
 function populateHycatt(visible: THREE.Group, palette: MaterialPalette): number {
   visible.userData = { visualFamily: 'hycatt-campus' };
 
-  // Main round house
-  const main = createRoundHouse('hycatt-main', palette, 3.5, 5);
+  // Main facility - tower with pipes and turbines
+  const main = createIconicBuilding('hycatt-main', palette, {
+    type: 'tower', floors: 3,
+    hasSolarPanels: false, hasAntennas: true, hasPipes: true,
+    hasTurbines: true, hasGlassCurtainWall: false, hasLedStrips: false,
+    hasSteelFrames: true, hasCoolingTowers: true, hasSatelliteDishes: true, hasWaterTanks: true,
+  });
   main.position.set(0, 0, 0);
   visible.add(main);
 
-  // L-shaped lab
-  const lab = createLShapedBuilding('hycatt-lab', palette);
-  lab.position.set(-9, 0, -4);
-  lab.scale.set(0.8, 0.8, 0.8);
+  // Lab - atrium with glass dome
+  const lab = createIconicBuilding('hycatt-lab', palette, {
+    type: 'atrium', floors: 2,
+    hasSolarPanels: false, hasAntennas: false, hasPipes: true,
+    hasTurbines: false, hasGlassCurtainWall: true, hasLedStrips: false,
+    hasSteelFrames: true, hasCoolingTowers: false, hasSatelliteDishes: false, hasWaterTanks: false,
+  });
+  lab.position.set(-10, 0, -5);
   visible.add(lab);
 
-  // Tower storage
-  const tower = createTower('hycatt-tower', palette, 2);
-  tower.position.set(7, 0, -5);
-  visible.add(tower);
+  // Storage - compact with pipes
+  const storage = createIconicBuilding('hycatt-storage', palette, {
+    type: 'workshop', floors: 1,
+    hasSolarPanels: false, hasAntennas: false, hasPipes: true,
+    hasTurbines: false, hasGlassCurtainWall: false, hasLedStrips: false,
+    hasSteelFrames: false, hasCoolingTowers: false, hasSatelliteDishes: false, hasWaterTanks: true,
+  });
+  storage.position.set(8, 0, -6);
+  visible.add(storage);
 
   return 8;
 }
@@ -608,20 +930,34 @@ function populateHycatt(visible: THREE.Group, palette: MaterialPalette): number 
 function populateNewZema(visible: THREE.Group, palette: MaterialPalette): number {
   visible.userData = { visualFamily: 'new-zema-campus' };
 
-  // Main organic building
-  const main = createOrganicBuilding('new-zema-main', palette);
+  // Main building - atrium with glass dome
+  const main = createIconicBuilding('new-zema-main', palette, {
+    type: 'atrium', floors: 2,
+    hasSolarPanels: true, hasAntennas: false, hasPipes: false,
+    hasTurbines: false, hasGlassCurtainWall: true, hasLedStrips: true,
+    hasSteelFrames: true, hasCoolingTowers: false, hasSatelliteDishes: false, hasWaterTanks: false,
+  });
   main.position.set(0, 0, 0);
   visible.add(main);
 
-  // Clustered workshop
-  const workshop = createClusteredBuilding('new-zema-workshop', palette);
-  workshop.position.set(-8, 0, -3);
-  workshop.scale.set(0.8, 0.8, 0.8);
+  // Workshop - industrial with pipes
+  const workshop = createIconicBuilding('new-zema-workshop', palette, {
+    type: 'workshop', floors: 2,
+    hasSolarPanels: false, hasAntennas: false, hasPipes: true,
+    hasTurbines: false, hasGlassCurtainWall: false, hasLedStrips: false,
+    hasSteelFrames: false, hasCoolingTowers: false, hasSatelliteDishes: false, hasWaterTanks: true,
+  });
+  workshop.position.set(-9, 0, -4);
   visible.add(workshop);
 
-  // Round office
-  const office = createRoundHouse('new-zema-office', palette, 2.5, 3);
-  office.position.set(6, 0, 5);
+  // Office - clean with LED strips
+  const office = createIconicBuilding('new-zema-office', palette, {
+    type: 'office', floors: 2,
+    hasSolarPanels: true, hasAntennas: false, hasPipes: false,
+    hasTurbines: false, hasGlassCurtainWall: true, hasLedStrips: true,
+    hasSteelFrames: false, hasCoolingTowers: false, hasSatelliteDishes: false, hasWaterTanks: false,
+  });
+  office.position.set(7, 0, 6);
   visible.add(office);
 
   return 7;
@@ -630,14 +966,24 @@ function populateNewZema(visible: THREE.Group, palette: MaterialPalette): number
 function populateUds(visible: THREE.Group, palette: MaterialPalette): number {
   visible.userData = { visualFamily: 'academic-pair' };
 
-  // Main L-shaped building
-  const main = createLShapedBuilding('uds-main', palette);
+  // Main building - office with glass curtain wall
+  const main = createIconicBuilding('uds-main', palette, {
+    type: 'office', floors: 3,
+    hasSolarPanels: true, hasAntennas: false, hasPipes: false,
+    hasTurbines: false, hasGlassCurtainWall: true, hasLedStrips: true,
+    hasSteelFrames: true, hasCoolingTowers: false, hasSatelliteDishes: false, hasWaterTanks: false,
+  });
   main.position.set(0, 0, 0);
   visible.add(main);
 
-  // Tower library
-  const library = createTower('uds-library', palette, 3);
-  library.position.set(-9, 0, 4);
+  // Library - tower with antennas
+  const library = createIconicBuilding('uds-library', palette, {
+    type: 'tower', floors: 3,
+    hasSolarPanels: false, hasAntennas: true, hasPipes: false,
+    hasTurbines: false, hasGlassCurtainWall: false, hasLedStrips: false,
+    hasSteelFrames: true, hasCoolingTowers: false, hasSatelliteDishes: true, hasWaterTanks: false,
+  });
+  library.position.set(-10, 0, 5);
   visible.add(library);
 
   return 7;
@@ -646,20 +992,34 @@ function populateUds(visible: THREE.Group, palette: MaterialPalette): number {
 function populateHtwSaar(visible: THREE.Group, palette: MaterialPalette): number {
   visible.userData = { visualFamily: 'workshop-tower-pair' };
 
-  // Clustered workshop
-  const workshop = createClusteredBuilding('htw-saar-workshop', palette);
+  // Workshop - industrial with pipes and turbines
+  const workshop = createIconicBuilding('htw-saar-workshop', palette, {
+    type: 'workshop', floors: 2,
+    hasSolarPanels: false, hasAntennas: false, hasPipes: true,
+    hasTurbines: true, hasGlassCurtainWall: false, hasLedStrips: false,
+    hasSteelFrames: true, hasCoolingTowers: true, hasSatelliteDishes: false, hasWaterTanks: true,
+  });
   workshop.position.set(0, 0, 0);
   visible.add(workshop);
 
-  // Tower
-  const tower = createTower('htw-saar-tower', palette, 4);
-  tower.position.set(-9, 0, -5);
+  // Tower - with antennas
+  const tower = createIconicBuilding('htw-saar-tower', palette, {
+    type: 'tower', floors: 4,
+    hasSolarPanels: false, hasAntennas: true, hasPipes: false,
+    hasTurbines: false, hasGlassCurtainWall: false, hasLedStrips: false,
+    hasSteelFrames: true, hasCoolingTowers: false, hasSatelliteDishes: true, hasWaterTanks: false,
+  });
+  tower.position.set(-10, 0, -5);
   visible.add(tower);
 
-  // Organic annex
-  const annex = createOrganicBuilding('htw-saar-annex', palette);
-  annex.position.set(7, 0, 6);
-  annex.scale.set(0.6, 0.6, 0.6);
+  // Annex - office with LED strips
+  const annex = createIconicBuilding('htw-saar-annex', palette, {
+    type: 'office', floors: 1,
+    hasSolarPanels: true, hasAntennas: false, hasPipes: false,
+    hasTurbines: false, hasGlassCurtainWall: true, hasLedStrips: true,
+    hasSteelFrames: false, hasCoolingTowers: false, hasSatelliteDishes: false, hasWaterTanks: false,
+  });
+  annex.position.set(8, 0, 6);
   visible.add(annex);
 
   return 8;
