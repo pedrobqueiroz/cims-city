@@ -41,10 +41,10 @@ export function createDaylightRig(scene: THREE.Scene, tier: LightingQualityTier)
   sun.name = 'light:sun';
   sun.position.set(28, 42, 18);
   sun.target.position.set(0, 0, 0);
-  sun.shadow.camera.left = -48;
-  sun.shadow.camera.right = 48;
-  sun.shadow.camera.top = 48;
-  sun.shadow.camera.bottom = -48;
+  sun.shadow.camera.left = -70;
+  sun.shadow.camera.right = 70;
+  sun.shadow.camera.top = 70;
+  sun.shadow.camera.bottom = -70;
   sun.shadow.camera.near = 1;
   sun.shadow.camera.far = 110;
   sun.shadow.camera.updateProjectionMatrix();

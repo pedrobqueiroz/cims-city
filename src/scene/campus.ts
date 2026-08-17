@@ -99,16 +99,7 @@ function createContext(
 ): THREE.Group {
   const root = group('context');
   if (density === 0) return root;
-  addInstances(
-    root,
-    'context:trees',
-    new THREE.ConeGeometry(0.9, 3.8, 6),
-    palette.context,
-    contextPoints.trees,
-    density,
-    1.9,
-    owned,
-  );
+  // Trees are now created by the vegetation module
   addInstances(
     root,
     'context:lamps',

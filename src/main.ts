@@ -13,6 +13,7 @@ import { createDaylightRig, setLightingQuality, type DaylightRig, type LightingQ
 import { createMaterialPalette, disposeMaterialPalette, type MaterialPalette } from './scene/materials';
 import { createSceneRuntime, type RuntimeOptions, type SceneRuntime } from './scene/runtime';
 import { createSelectionAppearance, type SelectionAppearance, type SelectionQualityTier } from './scene/selectionAppearance';
+import { createAtmosphere } from './scene/atmosphere';
 import { createAppShell, type AppShell } from './ui/appShell';
 import { createLabelLayer, type LabelLayer } from './ui/labels';
 
@@ -326,6 +327,9 @@ export function mountNeighborhood(root: HTMLElement, options: MountNeighborhoodO
       beforeRender: () => { controls?.update(); },
     });
     cleanup.push(() => { runtime?.dispose(); });
+
+    const atmosphere = createAtmosphere(runtime.scene);
+    cleanup.push(() => { atmosphere.dispose(); });
 
     const palette = factories.palette();
     cleanup.push(() => { factories.disposePalette(palette); });

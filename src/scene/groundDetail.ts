@@ -8,21 +8,21 @@ interface SidewalkSegment {
 
 const SIDEWALK_SEGMENTS: readonly SidewalkSegment[] = [
   // Along CiMS district south edge
-  { position: [-24, 0.08, 16], size: [48, 0.15, 1.5] },
+  { position: [-24, 0.15, 16], size: [48, 0.3, 1.5] },
   // Along CiMS district east edge
-  { position: [-1, 0.08, -6], size: [1.5, 0.15, 50] },
+  { position: [-1, 0.15, -6], size: [1.5, 0.3, 50] },
   // Along HyCatt district west edge
-  { position: [12, 0.08, 15], size: [1.5, 0.15, 30] },
+  { position: [12, 0.15, 15], size: [1.5, 0.3, 30] },
   // Along New ZeMA district south edge
-  { position: [27, 0.08, -7], size: [38, 0.15, 1.5] },
+  { position: [27, 0.15, -7], size: [38, 0.3, 1.5] },
   // Along UdS district east edge
-  { position: [-31, 0.08, 35], size: [1.5, 0.15, 17] },
+  { position: [-31, 0.15, 35], size: [1.5, 0.3, 17] },
   // Along htw saar district north edge
-  { position: [-6, 0.08, 28], size: [29, 0.15, 1.5] },
+  { position: [-6, 0.15, 28], size: [29, 0.3, 1.5] },
   // Plaza in front of CiMS hub
-  { position: [-24, 0.06, 0], size: [14, 0.12, 8] },
+  { position: [-24, 0.12, 0], size: [14, 0.25, 8] },
   // Plaza between HyCatt and New ZeMA
-  { position: [28, 0.06, -5], size: [8, 0.12, 6] },
+  { position: [28, 0.12, -5], size: [8, 0.25, 6] },
 ];
 
 interface PlantedArea {
@@ -65,10 +65,10 @@ export function createGroundDetail(palette: MaterialPalette): THREE.Group {
 
     // Curb on one side
     const curb = new THREE.Mesh(
-      new THREE.BoxGeometry(seg.size[0], 0.08, 0.15),
+      new THREE.BoxGeometry(seg.size[0], 0.12, 0.2),
       palette.curb,
     );
-    curb.position.set(seg.position[0], seg.position[1] + 0.04, seg.position[2] + seg.size[2] / 2);
+    curb.position.set(seg.position[0], seg.position[1] + 0.06, seg.position[2] + seg.size[2] / 2);
     curb.receiveShadow = true;
     curb.name = `curb:${i}`;
     root.add(curb);
@@ -76,15 +76,15 @@ export function createGroundDetail(palette: MaterialPalette): THREE.Group {
 
   // Road markings (center lines on streets)
   const markingPositions: Array<{ position: readonly [number, number, number]; length: number; rotation: number }> = [
-    { position: [-24, 0.06, 22], length: 48, rotation: 0 },
-    { position: [8, 0.06, -6], length: 50, rotation: Math.PI / 2 },
-    { position: [28, 0.06, -5], length: 25, rotation: 0 },
+    { position: [-24, 0.1, 22], length: 48, rotation: 0 },
+    { position: [8, 0.1, -6], length: 50, rotation: Math.PI / 2 },
+    { position: [28, 0.1, -5], length: 25, rotation: 0 },
   ];
 
   for (let i = 0; i < markingPositions.length; i++) {
     const mk = markingPositions[i]!;
     const marking = new THREE.Mesh(
-      new THREE.BoxGeometry(mk.length, 0.02, 0.15),
+      new THREE.BoxGeometry(mk.length, 0.05, 0.2),
       palette.selectionEdge,
     );
     marking.position.set(mk.position[0], mk.position[1], mk.position[2]);
@@ -98,10 +98,10 @@ export function createGroundDetail(palette: MaterialPalette): THREE.Group {
   for (let i = 0; i < PLANTED_AREAS.length; i++) {
     const area = PLANTED_AREAS[i]!;
     const patch = new THREE.Mesh(
-      new THREE.BoxGeometry(area.size[0], 0.06, area.size[1]),
+      new THREE.BoxGeometry(area.size[0], 0.15, area.size[1]),
       palette.grass,
     );
-    patch.position.set(area.position[0], 0.03, area.position[2]);
+    patch.position.set(area.position[0], 0.08, area.position[2]);
     patch.receiveShadow = true;
     patch.name = `planted:${i}`;
     root.add(patch);

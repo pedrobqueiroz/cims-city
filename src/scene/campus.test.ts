@@ -232,13 +232,11 @@ describe('campus assembly', () => {
     const zero = build({ contextDensity: 0 });
 
     expect(contextCounts(full)).toEqual({
-      'context:trees': 18,
       'context:lamps': 12,
       'context:bollards': 20,
     });
     expect(contextCounts(secondFull)).toEqual(contextCounts(full));
     expect(contextCounts(half)).toEqual({
-      'context:trees': 9,
       'context:lamps': 6,
       'context:bollards': 10,
     });
@@ -307,7 +305,6 @@ describe('campus assembly', () => {
     const campus = build({ palette });
     const context = directGroup(campus, 'context');
 
-    expect((context.getObjectByName('context:trees') as THREE.InstancedMesh).material).toBe(palette.context);
     expect((context.getObjectByName('context:lamps') as THREE.InstancedMesh).material).toBe(palette.darkMetal);
     expect((context.getObjectByName('context:bollards') as THREE.InstancedMesh).material).toBe(palette.sma);
   });

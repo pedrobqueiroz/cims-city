@@ -32,13 +32,6 @@ const CONTEXT_BUILDINGS: readonly ContextBuilding[] = [
   { position: [-58, 0, 35], size: [6, 3.4, 4.5], material: 'groupShell' },
   { position: [-58, 0, 48], size: [5, 2.2, 4], material: 'context' },
 
-  // Between districts
-  { position: [10, 0, -10], size: [4, 2.0, 3.5], material: 'context' },
-  { position: [20, 0, 5], size: [4.5, 2.6, 4], material: 'groupShell' },
-  { position: [-10, 0, 20], size: [5, 2.4, 4], material: 'context' },
-  { position: [15, 0, 30], size: [4, 2.2, 3.5], material: 'groupShell' },
-  { position: [-30, 0, 15], size: [5, 2.8, 4.5], material: 'context' },
-
   // Far context (beyond SEI land)
   { position: [-65, 0, -20], size: [6, 3.0, 5], material: 'context' },
   { position: [-65, 0, 0], size: [5, 2.4, 4], material: 'groupShell' },

@@ -20,10 +20,10 @@ describe('daylight rig', () => {
     expect(rig.lights).toEqual([rig.sun, rig.fill]);
     expect(rig.root.children).toEqual(expect.arrayContaining([rig.sun, rig.fill, rig.sun.target]));
     expect(rig.sun.shadow.mapSize.toArray()).toEqual([2048, 2048]);
-    expect(rig.sun.shadow.camera.left).toBe(-48);
-    expect(rig.sun.shadow.camera.right).toBe(48);
-    expect(rig.sun.shadow.camera.top).toBe(48);
-    expect(rig.sun.shadow.camera.bottom).toBe(-48);
+    expect(rig.sun.shadow.camera.left).toBe(-70);
+    expect(rig.sun.shadow.camera.right).toBe(70);
+    expect(rig.sun.shadow.camera.top).toBe(70);
+    expect(rig.sun.shadow.camera.bottom).toBe(-70);
     expect(rig.sun.shadow.camera.near).toBe(1);
     expect(rig.sun.shadow.camera.far).toBe(110);
     expect(rig.sun.shadow.normalBias).toBe(0.025);
