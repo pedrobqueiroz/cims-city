@@ -232,12 +232,12 @@ describe('campus assembly', () => {
 
     expect(contextCounts(full)).toEqual({
       'context:lamps': 8,
-      'context:bollards': 13,
+      'context:bollards': 11,
     });
     expect(contextCounts(secondFull)).toEqual(contextCounts(full));
     expect(contextCounts(half)).toEqual({
       'context:lamps': 4,
-      'context:bollards': 7,
+      'context:bollards': 6,
     });
     expect(directGroup(zero, 'context').children).toEqual([]);
 

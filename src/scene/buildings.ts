@@ -715,8 +715,8 @@ function populateLand(visible: THREE.Group, layout: LayoutNode, palette: Materia
   visible.userData.visualFamily = 'institutional-land';
 
   // Create flowing terrain with PlaneGeometry and vertex displacement
-  const terrainWidth = 130;
-  const terrainDepth = 100;
+  const terrainWidth = 400;
+  const terrainDepth = 400;
   const segments = 32;
   const surfaceGeometry = new THREE.PlaneGeometry(terrainWidth, terrainDepth, segments, segments);
   surfaceGeometry.rotateX(-Math.PI / 2);

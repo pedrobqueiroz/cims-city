@@ -47,7 +47,7 @@ describe('multi-district atlas layout', () => {
     first.min.set(-999, -999, -999);
 
     expect(second.equals(DISTRICT_LAYOUT.get('cims')!.bounds)).toBe(true);
-    expect(worldPositionFor('cims-hub').toArray()).toEqual([-24, 0, -6]);
+    expect(worldPositionFor('cims-hub').toArray()).toEqual([-60, 0, -20]);
     expect(() => worldPositionFor('missing')).toThrowError('Missing atlas position: missing');
   });
 });

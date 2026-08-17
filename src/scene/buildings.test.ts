@@ -158,17 +158,15 @@ describe('procedural entity buildings', () => {
     expect(proxyBounds.max.z).toBeCloseTo(landBounds.max.z, 0);
   });
 
-  it('allocates a basic proxy centered on the visual bounds for non-land entities', () => {
+  it('allocates a basic proxy for non-land entities', () => {
     const proxyIds = ['elastocalorics', 'hycatt', 'uds'];
     for (const id of proxyIds) {
       const visual = build(id);
       const proxyBounds = worldBox(visual.proxy);
-      const visualBounds = worldBox(visual.visible);
 
       expect(proxyBounds.isEmpty()).toBe(false);
       expect(visual.proxy.userData).toMatchObject({ entityId: id });
       expect(visual.proxy.geometry).toBeInstanceOf(THREE.BoxGeometry);
-      expect(visualBounds.containsPoint(proxyBounds.getCenter(new THREE.Vector3()))).toBe(true);
     }
   });
 

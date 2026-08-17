@@ -15,11 +15,11 @@ import {
 } from './layout';
 
 const groupCoordinates: ReadonlyMap<string, readonly [number, number]> = new Map([
-  ['elastocalorics', [-24, -21]],
-  ['electroactive-polymers', [-9.7342, -10.6353]],
-  ['smart-material-electronics', [-15.1832, 6.1353]],
-  ['smart-textiles', [-32.8168, 6.1353]],
-  ['shape-memory-alloys', [-38.2658, -10.6353]],
+  ['elastocalorics', [-60, -50]],
+  ['electroactive-polymers', [-31.4683, -29.2705]],
+  ['smart-material-electronics', [-42.3664, 4.2705]],
+  ['smart-textiles', [-77.6336, 4.2705]],
+  ['shape-memory-alloys', [-88.5317, -29.2705]],
 ]);
 
 function copyLayout(): Map<string, LayoutNode> {
@@ -38,18 +38,18 @@ describe('organizational campus layout', () => {
       'smart-textiles',
       'shape-memory-alloys',
     ]);
-    expect(GROUP_RADIUS).toBe(15);
-    expect(GROUP_FOOTPRINT).toEqual([10, 7]);
+    expect(GROUP_RADIUS).toBe(30);
+    expect(GROUP_FOOTPRINT).toEqual([14, 10]);
     const hub = LAYOUT_BY_ID.get('cims-hub')!;
 
     for (const id of GROUP_IDS) {
       const layout = LAYOUT_BY_ID.get(id);
       expect(layout, id).toBeDefined();
       if (!layout) return;
-      expect(Math.hypot(layout.position[0] - hub.position[0], layout.position[2] - hub.position[2])).toBeCloseTo(15, 6);
+      expect(Math.hypot(layout.position[0] - hub.position[0], layout.position[2] - hub.position[2])).toBeCloseTo(30, 6);
       expect(layout.position[1]).toBe(0);
-      expect(layout.footprint).toEqual([10, 7]);
-      expect(layout.focus.distance).toBe(15);
+      expect(layout.footprint).toEqual([14, 10]);
+      expect(layout.focus.distance).toBe(25);
       expect(layout.focus.target[1]).toBe(3);
     }
   });
@@ -96,9 +96,9 @@ describe('organizational campus layout', () => {
     expect(sei).toMatchObject({
       position: [0, 0, 2],
       footprint: [8, 5],
-      focus: { target: [0, 3, 0], distance: 58 },
+      focus: { target: [0, 3, 0], distance: 120 },
     });
-    expect(hub?.position).toEqual([-24, 0, -6]);
+    expect(hub?.position).toEqual([-60, 0, -20]);
     expect(sei?.position).not.toEqual(hub?.position);
   });
 
@@ -126,8 +126,8 @@ describe('organizational campus layout', () => {
       width: 400, height: 400, toJSON: () => ({}),
     });
     const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 260);
-    camera.position.set(-24, 40, -6);
-    camera.lookAt(-24, 0, -6);
+    camera.position.set(-60, 40, -20);
+    camera.lookAt(-60, 0, -20);
     camera.updateProjectionMatrix();
     camera.updateMatrixWorld(true);
     const onSelect = vi.fn();

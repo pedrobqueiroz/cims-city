@@ -15,11 +15,11 @@ export const GROUP_IDS: readonly string[] = [
   'smart-textiles',
   'shape-memory-alloys',
 ];
-export const GROUP_RADIUS = 15;
-export const GROUP_FOOTPRINT: readonly [number, number] = [10, 7];
-export const OVERVIEW_FOCUS: { target: readonly [number, number, number]; distance: 58 } = {
+export const GROUP_RADIUS = 30;
+export const GROUP_FOOTPRINT: readonly [number, number] = [14, 10];
+export const OVERVIEW_FOCUS: { target: readonly [number, number, number]; distance: 120 } = {
   target: [0, 3, 0],
-  distance: 58,
+  distance: 120,
 };
 
 function campusNode(entityId: string, position: readonly [number, number, number], footprint: readonly [number, number], distance: number): LayoutNode {
@@ -33,7 +33,7 @@ const groupNodes = GROUP_IDS.map((entityId, index) => {
     cimsHubPosition.x + Math.cos(angle) * GROUP_RADIUS,
     0,
     cimsHubPosition.z + Math.sin(angle) * GROUP_RADIUS,
-  ], GROUP_FOOTPRINT, 15);
+  ], GROUP_FOOTPRINT, 25);
 });
 
 const seiNode: LayoutNode = {
@@ -45,13 +45,13 @@ const seiNode: LayoutNode = {
 
 export const LAYOUT_BY_ID: ReadonlyMap<string, LayoutNode> = new Map([
   seiNode,
-  campusNode('cims-hub', [-24, 0, -6], [14, 10], 18),
+  campusNode('cims-hub', [-60, 0, -20], [20, 14], 30),
   ...groupNodes,
-  campusNode('soft-robotics-lab', [4, 0, 12], [10, 7], 15),
-  campusNode('hycatt', [31, 0, 15], [12, 8], 19),
-  campusNode('new-zema', [26, 0, -20], [12, 8], 19),
-  campusNode('uds', [-42, 0, 35], [9, 6], 18),
-  campusNode('htw-saar', [-6, 0, 37], [9, 6], 18),
+  campusNode('soft-robotics-lab', [10, 0, 30], [14, 10], 25),
+  campusNode('hycatt', [70, 0, 30], [16, 12], 30),
+  campusNode('new-zema', [60, 0, -50], [16, 12], 30),
+  campusNode('uds', [-100, 0, 80], [12, 8], 25),
+  campusNode('htw-saar', [-10, 0, 80], [12, 8], 25),
 ].map((node) => [node.entityId, node]));
 
 export function validateLayout(entityIds: readonly string[], layout: ReadonlyMap<string, LayoutNode>): string[] {
