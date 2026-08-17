@@ -148,7 +148,7 @@ export function createGroundDetail(palette: MaterialPalette): THREE.Group {
   }
 
   // Create planted areas in blocks between streets
-  const plantedAreas = [
+  const plantedAreas: Array<{ pos: [number, number]; size: [number, number] }> = [
     { pos: [-42, -30], size: [12, 8] },
     { pos: [-42, 5], size: [12, 8] },
     { pos: [-18, -30], size: [12, 8] },

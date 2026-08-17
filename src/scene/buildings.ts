@@ -82,8 +82,8 @@ function createIconicBuilding(id: string, palette: MaterialPalette, archetype: B
   if (archetype.type === 'tower') {
     // Flat roof with mechanical penthouse
     building.add(mesh(
-      new THREE.BoxGeometry(w * 0.6, 1.5, d * 0.6),
-      palette.darkMech, 'penthouse', [0, 0.6 + totalHeight + 0.75, 0],
+    new THREE.BoxGeometry(w * 0.6, 1.5, d * 0.6),
+    palette.darkMetal, 'penthouse', [0, 0.6 + totalHeight + 0.75, 0],
     ));
   } else if (archetype.type === 'atrium') {
     // Glass dome roof
