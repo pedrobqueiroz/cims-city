@@ -31,6 +31,12 @@ const roleColors = {
   routeActive: '#d4793b',
   routePreview: '#e8a665',
   routeMuted: '#9e9a90',
+  pavement: '#c2c5be',
+  sidewalk: '#e0ddd5',
+  curb: '#8a8d86',
+  grass: '#a8c490',
+  road: '#7a7d76',
+  landDark: '#98b878',
 } as const;
 
 const roles = Object.keys(roleColors) as Array<keyof MaterialPalette>;

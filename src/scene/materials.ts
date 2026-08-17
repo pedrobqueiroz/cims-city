@@ -21,6 +21,12 @@ export interface MaterialPalette {
   routeActive: THREE.MeshStandardMaterial;
   routePreview: THREE.MeshStandardMaterial;
   routeMuted: THREE.MeshStandardMaterial;
+  pavement: THREE.MeshStandardMaterial;
+  sidewalk: THREE.MeshStandardMaterial;
+  curb: THREE.MeshStandardMaterial;
+  grass: THREE.MeshStandardMaterial;
+  road: THREE.MeshStandardMaterial;
+  landDark: THREE.MeshStandardMaterial;
 }
 
 const disposedPalettes = new WeakSet<MaterialPalette>();
@@ -56,6 +62,12 @@ export function createMaterialPalette(): MaterialPalette {
     routeActive: createMaterial('#d4793b', 0.5, 0.1),
     routePreview: createMaterial('#e8a665', 0.52, 0.08),
     routeMuted: createMaterial('#9e9a90', 0.74),
+    pavement: createMaterial('#c2c5be', 0.78),
+    sidewalk: createMaterial('#e0ddd5', 0.76),
+    curb: createMaterial('#8a8d86', 0.7),
+    grass: createMaterial('#a8c490', 0.82),
+    road: createMaterial('#7a7d76', 0.74),
+    landDark: createMaterial('#98b878', 0.76),
   };
 }
 
