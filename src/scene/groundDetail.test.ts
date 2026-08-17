@@ -23,27 +23,30 @@ describe('ground detail', () => {
     disposeMaterialPalette(palette);
   });
 
-  it('creates road markings', () => {
+  it('creates benches and lampposts', () => {
     const palette = createMaterialPalette();
     const detail = createGroundDetail(palette);
     groups.push(detail);
 
-    const markings = detail.children.filter(c => c.name.startsWith('road-marking'));
-    expect(markings.length).toBeGreaterThan(0);
+    const benches = detail.children.filter(c => c.name.startsWith('bench'));
+    const lampposts = detail.children.filter(c => c.name.startsWith('lamppost'));
+    expect(benches.length).toBeGreaterThan(0);
+    expect(lampposts.length).toBeGreaterThan(0);
 
     disposeMaterialPalette(palette);
   });
 
-  it('creates geometry that receives shadows', () => {
+  it('creates sidewalks that receive shadows', () => {
     const palette = createMaterialPalette();
     const detail = createGroundDetail(palette);
     groups.push(detail);
 
-    detail.traverse((child) => {
-      if (child instanceof THREE.Mesh) {
-        expect(child.receiveShadow).toBe(true);
+    const sidewalks = detail.children.filter(c => c.name.startsWith('sidewalk'));
+    for (const sidewalk of sidewalks) {
+      if (sidewalk instanceof THREE.Mesh) {
+        expect(sidewalk.receiveShadow).toBe(true);
       }
-    });
+    }
 
     disposeMaterialPalette(palette);
   });
