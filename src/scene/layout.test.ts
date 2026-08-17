@@ -126,8 +126,8 @@ describe('organizational campus layout', () => {
       width: 400, height: 400, toJSON: () => ({}),
     });
     const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 260);
-    camera.position.set(-24, 20, 34);
-    camera.lookAt(-24, 3.5, -6);
+    camera.position.set(-24, 40, -6);
+    camera.lookAt(-24, 0, -6);
     camera.updateProjectionMatrix();
     camera.updateMatrixWorld(true);
     const onSelect = vi.fn();

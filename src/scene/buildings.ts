@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import type { Motif, NeighborhoodEntity } from '../data/schema';
-import { DISTRICT_LAYOUT, SEI_LAND_POINTS, scopeBounds } from './atlasLayout';
+import type { NeighborhoodEntity } from '../data/schema';
+import { DISTRICT_LAYOUT, scopeBounds } from './atlasLayout';
 import type { LayoutNode } from './layout';
 import type { MaterialPalette } from './materials';
 
@@ -34,419 +34,417 @@ function mesh(
   return result;
 }
 
-function motifGroup(motif: Motif): THREE.Group {
-  const group = new THREE.Group();
-  group.name = `motif:${motif}`;
-  group.userData.motif = motif;
-  return group;
-}
+// ============================================================================
+// BUILDING TYPES - Each creates a unique multi-volume structure
+// ============================================================================
 
-function createResearchShell(id: string, palette: MaterialPalette): THREE.Group {
-  const shell = new THREE.Group();
-  shell.name = `shell:${id}`;
-  shell.userData = { footprint: '10x7', wallHeight: 4.8, plan: 'L-plan' };
+// ============================================================================
+// DIVERSE BUILDING SHAPES - Hateno Village style variety
+// ============================================================================
 
-  // Main volume (shifted left)
-  shell.add(
-    mesh(new THREE.BoxGeometry(7, 0.3, 7), palette.darkMetal, 'shell:plinth-main', [-1.5, 0.15, 0]),
-    mesh(new THREE.BoxGeometry(7, 4.5, 7), palette.groupShell, 'shell:walls-main', [-1.5, 2.55, 0]),
-    mesh(new THREE.BoxGeometry(6.9, 0.72, 7), palette.glass, 'shell:glazing-main', [-1.5, 3.25, 0]),
-  );
+function createRoundHouse(id: string, palette: MaterialPalette, radius: number = 3, height: number = 4): THREE.Group {
+  const house = new THREE.Group();
+  house.name = `round-house:${id}`;
 
-  // Wing (shifted right and back)
-  shell.add(
-    mesh(new THREE.BoxGeometry(4, 0.3, 5), palette.darkMetal, 'shell:plinth-wing', [3, 0.15, -1]),
-    mesh(new THREE.BoxGeometry(4, 3.2, 5), palette.groupShell, 'shell:walls-wing', [3, 1.9, -1]),
-    mesh(new THREE.BoxGeometry(3.9, 0.6, 5), palette.glass, 'shell:glazing-wing', [3, 2.5, -1]),
-  );
+  // Stone foundation ring
+  house.add(mesh(
+    new THREE.CylinderGeometry(radius + 0.3, radius + 0.5, 0.6, 12),
+    palette.context, 'foundation', [0, 0.3, 0],
+  ));
 
-  // Entrance canopy at the L corner
-  shell.add(
-    mesh(new THREE.BoxGeometry(2.4, 0.15, 1.0), palette.darkMetal, 'shell:canopy', [0.5, 3.1, 2.9]),
-    mesh(new THREE.BoxGeometry(0.2, 3.1, 0.2), palette.darkMetal, 'shell:column:0', [-0.4, 1.55, 3.2]),
-    mesh(new THREE.BoxGeometry(0.2, 3.1, 0.2), palette.darkMetal, 'shell:column:1', [1.4, 1.55, 3.2]),
-  );
+  // Cylindrical walls
+  house.add(mesh(
+    new THREE.CylinderGeometry(radius, radius, height, 12),
+    palette.groupShell, 'walls', [0, 0.6 + height / 2, 0],
+  ));
 
-  // Entrance door
-  shell.add(
-    mesh(new THREE.BoxGeometry(1.6, 2.4, 0.16), palette.darkMetal, 'shell:entrance', [0.5, 1.5, 3.42]),
-  );
+  // Conical thatched roof
+  house.add(mesh(
+    new THREE.ConeGeometry(radius + 0.8, 2.5, 12),
+    palette.textile, 'roof', [0, 0.6 + height + 1.25, 0],
+  ));
 
-  return shell;
-}
+  // Door
+  house.add(mesh(
+    new THREE.BoxGeometry(1.0, 2.0, 0.15),
+    palette.darkMetal, 'door', [0, 1.6, radius - 0.1],
+  ));
 
-function createThermalMotif(palette: MaterialPalette): THREE.Group {
-  const group = motifGroup('thermal');
-  group.userData.finCount = 6;
-  const geometry = new THREE.BoxGeometry(0.18, 1.6, 2.8);
-
-  for (let index = 0; index < 6; index += 1) {
-    const fin = mesh(
-      geometry,
-      index % 2 === 0 ? palette.thermalWarm : palette.thermalCool,
-      `thermal:fin:${index}`,
-      [-3.75 + index * 1.5, 5.6, 0],
-    );
-    group.add(fin);
-  }
-  return group;
-}
-
-function createPolymerMotif(palette: MaterialPalette): THREE.Group {
-  const group = motifGroup('polymer');
-  group.userData.ribCount = 3;
-
-  for (const [index, z] of [-2, 0, 2].entries()) {
-    const curve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-4.25, 4.92, z),
-      new THREE.Vector3(-2.2, 5.6, z),
-      new THREE.Vector3(0, 6.15, z),
-      new THREE.Vector3(2.2, 5.6, z),
-      new THREE.Vector3(4.25, 4.92, z),
-    ]);
-    const rib = mesh(
-      new THREE.TubeGeometry(curve, 10, 0.09, 4, false),
-      palette.polymer,
-      `polymer:canopy-rib:${index}`,
-      [0, 0, 0],
-    );
-    group.add(rib);
-  }
-  return group;
-}
-
-function createElectronicsMotif(palette: MaterialPalette): THREE.Group {
-  const group = motifGroup('electronics');
-  const cellGeometry = new THREE.BoxGeometry(0.62, 0.34, 0.08);
-  const grid = new THREE.InstancedMesh(cellGeometry, palette.electronics, 12);
-  grid.name = 'electronics:facade-grid';
-  grid.castShadow = true;
-  const matrix = new THREE.Matrix4();
-  let instance = 0;
-  for (let row = 0; row < 3; row += 1) {
-    for (let column = 0; column < 4; column += 1) {
-      matrix.makeTranslation(-1.65 + column * 1.1, 1.15 + row * 0.72, 3.46);
-      grid.setMatrixAt(instance, matrix);
-      instance += 1;
-    }
-  }
-  grid.instanceMatrix.needsUpdate = true;
-
-  const rooftop = mesh(
-    new THREE.BoxGeometry(2.2, 0.9, 1.6),
-    palette.electronics,
-    'electronics:rooftop-box',
-    [0, 5.25, 0],
-  );
-  group.userData = { motif: 'electronics', facadeCells: 12, rooftopBoxes: 1 };
-  group.add(grid, rooftop);
-  return group;
-}
-
-function createTextileMotif(palette: MaterialPalette): THREE.Group {
-  const group = motifGroup('textile');
-  const slatGeometry = new THREE.BoxGeometry(5.5, 0.12, 0.16);
-
-  for (const [index, rotation] of [Math.PI / 4, -Math.PI / 4].entries()) {
-    const array = new THREE.InstancedMesh(slatGeometry, palette.textile, 5);
-    array.name = `textile:slat-array:${index}`;
-    array.rotation.y = rotation;
-    array.castShadow = true;
-    const matrix = new THREE.Matrix4();
-    for (let slat = 0; slat < 5; slat += 1) {
-      matrix.makeTranslation(0, 5.08 + Math.abs(slat - 2) * 0.08, (slat - 2) * 0.65);
-      array.setMatrixAt(slat, matrix);
-    }
-    array.instanceMatrix.needsUpdate = true;
-    group.add(array);
-  }
-  group.userData = { motif: 'textile', arrays: 2, slatsPerArray: 5 };
-  return group;
-}
-
-function createFoldedRoofGeometry(): THREE.BufferGeometry {
-  const positions = new Float32Array([
-    -4.5, 4.85, -2.8, -4.5, 6.05, 0, 4.5, 4.85, -2.8,
-    4.5, 4.85, -2.8, -4.5, 6.05, 0, 4.5, 6.05, 0,
-    -4.5, 6.05, 0, -4.5, 4.85, 2.8, 4.5, 6.05, 0,
-    4.5, 6.05, 0, -4.5, 4.85, 2.8, 4.5, 4.85, 2.8,
-  ]);
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  geometry.computeVertexNormals();
-  return geometry;
-}
-
-function createSmaMotif(palette: MaterialPalette): THREE.Group {
-  const group = motifGroup('sma');
-  const roof = mesh(createFoldedRoofGeometry(), palette.sma, 'sma:folded-roof', [0, 0, 0]);
-  group.add(roof);
-
-  for (const [index, x] of [-2, 2].entries()) {
-    const loop = mesh(
-      new THREE.TorusGeometry(0.55, 0.08, 4, 12),
-      palette.sma,
-      `sma:loop:${index}`,
-      [x, 5.58, 1.15],
-    );
-    group.add(loop);
-  }
-  group.userData = { motif: 'sma', loops: 2, foldedRoof: true };
-  return group;
-}
-
-function createResearchMotif(motif: Motif | undefined, palette: MaterialPalette): THREE.Group | undefined {
-  switch (motif) {
-    case 'thermal': return createThermalMotif(palette);
-    case 'polymer': return createPolymerMotif(palette);
-    case 'electronics': return createElectronicsMotif(palette);
-    case 'textile': return createTextileMotif(palette);
-    case 'sma': return createSmaMotif(palette);
-    default: return undefined;
-  }
-}
-
-function populateResearchGroup(visible: THREE.Group, entity: NeighborhoodEntity, palette: MaterialPalette): number {
-  visible.userData = {
-    visualFamily: 'research-group',
-    footprint: '10x7',
-    motif: entity.motif,
-  };
-  visible.add(createResearchShell(entity.id, palette));
-  const motif = createResearchMotif(entity.motif, palette);
-  if (motif) visible.add(motif);
-  return 7;
-}
-
-function populateCivicHub(visible: THREE.Group, entity: NeighborhoodEntity, palette: MaterialPalette): number {
-  visible.userData.visualFamily = 'civic-atrium';
-  const shell = new THREE.Group();
-  shell.name = `shell:${entity.id}`;
-
-  // Main atrium body
-  shell.add(
-    mesh(new THREE.BoxGeometry(12, 0.3, 8), palette.darkMetal, 'hub:plinth', [0, 0.15, 0]),
-    mesh(new THREE.BoxGeometry(11, 2.7, 7), palette.civicHub, 'hub:atrium', [0, 1.65, 0]),
-    mesh(new THREE.BoxGeometry(7.5, 1.1, 7.1), palette.glass, 'hub:glazing', [0, 2.42, 0]),
-  );
-
-  // Side wing
-  shell.add(
-    mesh(new THREE.BoxGeometry(5, 2.2, 6), palette.civicHub, 'hub:wing', [7, 1.4, -0.5]),
-    mesh(new THREE.BoxGeometry(4.9, 0.5, 6), palette.glass, 'hub:wing-glazing', [7, 2.15, -0.5]),
-  );
-
-  // Entrance canopy with columns
-  shell.add(
-    mesh(new THREE.BoxGeometry(8, 0.18, 3), palette.darkMetal, 'hub:canopy', [0, 3.2, 4.5]),
-    mesh(new THREE.BoxGeometry(0.25, 3.2, 0.25), palette.darkMetal, 'hub:column:0', [-3, 1.6, 5.5]),
-    mesh(new THREE.BoxGeometry(0.25, 3.2, 0.25), palette.darkMetal, 'hub:column:1', [3, 1.6, 5.5]),
-    mesh(new THREE.BoxGeometry(0.25, 3.2, 0.25), palette.darkMetal, 'hub:column:2', [-3, 1.6, 3.5]),
-    mesh(new THREE.BoxGeometry(0.25, 3.2, 0.25), palette.darkMetal, 'hub:column:3', [3, 1.6, 3.5]),
-  );
-
-  // Rooftop mechanical box
-  shell.add(
-    mesh(new THREE.BoxGeometry(3, 0.8, 2), palette.darkMetal, 'hub:rooftop', [0, 3.6, -2]),
-  );
-
-  visible.add(shell);
-  return 4.2;
-}
-
-function populateSoftLab(visible: THREE.Group, entity: NeighborhoodEntity, palette: MaterialPalette): number {
-  visible.userData = { visualFamily: 'soft-lab', motif: 'soft-robotics' };
-  const shell = new THREE.Group();
-  shell.name = `shell:${entity.id}`;
-  shell.add(
-    mesh(new THREE.BoxGeometry(9, 0.3, 6), palette.darkMetal, 'soft-lab:plinth', [0, 0.15, 0]),
-    mesh(new THREE.BoxGeometry(8.5, 2.7, 5.5), palette.groupShell, 'soft-lab:walls', [0, 1.65, 0]),
-    mesh(new THREE.BoxGeometry(6, 1.1, 0.12), palette.glass, 'soft-lab:glazing', [0, 1.8, 2.69]),
-  );
-
-  const canopy = motifGroup('soft-robotics');
-  for (const [index, z] of [-2.35, 0, 2.35].entries()) {
-    const curve = new THREE.QuadraticBezierCurve3(
-      new THREE.Vector3(-4.15, 3.02, z),
-      new THREE.Vector3(0, 4.45, z),
-      new THREE.Vector3(4.15, 3.02, z),
-    );
-    canopy.add(mesh(
-      new THREE.TubeGeometry(curve, 8, 0.08, 4, false),
-      palette.polymer,
-      `soft-lab:canopy-rib:${index}`,
-      [0, 0, 0],
+  // Round windows (2)
+  for (let i = 0; i < 2; i++) {
+    const angle = (i * Math.PI) + Math.PI / 2;
+    house.add(mesh(
+      new THREE.CylinderGeometry(0.4, 0.4, 0.1, 8),
+      palette.glass, `window:${i}`,
+      [Math.cos(angle) * (radius - 0.05), height * 0.6, Math.sin(angle) * (radius - 0.05)],
     ));
   }
-  canopy.userData = { motif: 'soft-robotics', ribCount: 3 };
-  visible.add(shell, canopy);
-  return 4.2;
+
+  return house;
 }
 
-function populateLand(visible: THREE.Group, layout: LayoutNode, palette: MaterialPalette): number {
-  visible.userData.visualFamily = 'institutional-land';
-  const shape = new THREE.Shape();
-  const first = SEI_LAND_POINTS[0]!;
-  shape.moveTo(first[0] - layout.position[0], first[1] - layout.position[2]);
-  for (const point of SEI_LAND_POINTS.slice(1)) {
-    shape.lineTo(point[0] - layout.position[0], point[1] - layout.position[2]);
+function createLShapedBuilding(id: string, palette: MaterialPalette): THREE.Group {
+  const building = new THREE.Group();
+  building.name = `l-shaped:${id}`;
+
+  // Main wing
+  building.add(mesh(
+    new THREE.BoxGeometry(8, 4, 6),
+    palette.groupShell, 'wing-main', [-2, 2.5, 0],
+  ));
+
+  // Side wing (perpendicular)
+  building.add(mesh(
+    new THREE.BoxGeometry(5, 3.5, 8),
+    palette.groupShell, 'wing-side', [4, 2.25, -2],
+  ));
+
+  // Foundation for both
+  building.add(mesh(
+    new THREE.BoxGeometry(12, 0.5, 10),
+    palette.context, 'foundation', [0, 0.25, -1],
+  ));
+
+  // Roof main (pitched)
+  const roofMain = new THREE.BufferGeometry();
+  const rmPositions = new Float32Array([
+    -6, 4.5, -3, 2, 4.5, -3, -2, 6.5, 0,
+    2, 4.5, -3, 2, 4.5, 3, -2, 6.5, 0,
+    2, 4.5, 3, -6, 4.5, 3, -2, 6.5, 0,
+    -6, 4.5, 3, -6, 4.5, -3, -2, 6.5, 0,
+  ]);
+  roofMain.setAttribute('position', new THREE.BufferAttribute(rmPositions, 3));
+  roofMain.computeVertexNormals();
+  building.add(mesh(roofMain, palette.textile, 'roof-main', [0, 0, 0]));
+
+  // Roof side (flat)
+  building.add(mesh(
+    new THREE.BoxGeometry(5.5, 0.2, 8.5),
+    palette.darkMetal, 'roof-side', [4, 4.1, -2],
+  ));
+
+  // Door
+  building.add(mesh(
+    new THREE.BoxGeometry(1.2, 2.2, 0.15),
+    palette.darkMetal, 'door', [-2, 1.6, 3.1],
+  ));
+
+  return building;
+}
+
+function createTower(id: string, palette: MaterialPalette, floors: number = 4): THREE.Group {
+  const tower = new THREE.Group();
+  tower.name = `tower:${id}`;
+
+  const radius = 2.5;
+  const floorHeight = 3.0;
+  const totalHeight = floors * floorHeight;
+
+  // Foundation
+  tower.add(mesh(
+    new THREE.CylinderGeometry(radius + 0.3, radius + 0.5, 0.6, 8),
+    palette.context, 'foundation', [0, 0.3, 0],
+  ));
+
+  // Cylindrical tower body
+  tower.add(mesh(
+    new THREE.CylinderGeometry(radius, radius, totalHeight, 8),
+    palette.groupShell, 'body', [0, 0.6 + totalHeight / 2, 0],
+  ));
+
+  // Conical roof
+  tower.add(mesh(
+    new THREE.ConeGeometry(radius + 0.5, 3.0, 8),
+    palette.textile, 'roof', [0, 0.6 + totalHeight + 1.5, 0],
+  ));
+
+  // Windows on each floor
+  for (let floor = 0; floor < floors; floor++) {
+    const angle = (floor * Math.PI / 2);
+    tower.add(mesh(
+      new THREE.BoxGeometry(0.6, 1.0, 0.1),
+      palette.glass, `window:${floor}`,
+      [Math.cos(angle) * (radius - 0.05), 0.6 + floor * floorHeight + 1.5, Math.sin(angle) * (radius - 0.05)],
+    ));
   }
-  shape.closePath();
-  const surfaceGeometry = new THREE.ExtrudeGeometry(shape, { depth: 0.8, bevelEnabled: false });
-  surfaceGeometry.rotateX(Math.PI / 2);
-  visible.add(mesh(surfaceGeometry, palette.ground, 'land:sei:surface', [0, -0.05, 0]));
 
-  for (const district of DISTRICT_LAYOUT.values()) {
-    const size = district.bounds.getSize(new THREE.Vector3());
-    const clearing = mesh(
-      new THREE.BoxGeometry(size.x, 0.12, size.z),
-      palette.path,
-      `clearing:${district.id}`,
-      [
-        district.center.x - layout.position[0],
-        0.02,
-        district.center.z - layout.position[2],
-      ],
-    );
-    clearing.castShadow = false;
-    visible.add(clearing);
+  // Door
+  tower.add(mesh(
+    new THREE.BoxGeometry(1.0, 2.0, 0.15),
+    palette.darkMetal, 'door', [0, 1.6, radius - 0.1],
+  ));
+
+  return tower;
+}
+
+function createOrganicBuilding(id: string, palette: MaterialPalette): THREE.Group {
+  const building = new THREE.Group();
+  building.name = `organic:${id}`;
+
+  // Main irregular volume (two intersecting boxes)
+  building.add(mesh(
+    new THREE.BoxGeometry(7, 4, 5),
+    palette.groupShell, 'volume-1', [-1, 2.5, 0],
+  ));
+  building.add(mesh(
+    new THREE.BoxGeometry(5, 3.5, 7),
+    palette.groupShell, 'volume-2', [3, 2.25, -1],
+  ));
+
+  // Shared foundation
+  building.add(mesh(
+    new THREE.BoxGeometry(14, 0.5, 10),
+    palette.context, 'foundation', [0, 0.25, -0.5],
+  ));
+
+  // Roof volume 1 (pitched)
+  const roof1 = new THREE.BufferGeometry();
+  const r1Positions = new Float32Array([
+    -5, 4.5, -3, 3, 4.5, -3, -1, 6.5, 0,
+    3, 4.5, -3, 3, 4.5, 3, -1, 6.5, 0,
+    3, 4.5, 3, -5, 4.5, 3, -1, 6.5, 0,
+    -5, 4.5, 3, -5, 4.5, -3, -1, 6.5, 0,
+  ]);
+  roof1.setAttribute('position', new THREE.BufferAttribute(r1Positions, 3));
+  roof1.computeVertexNormals();
+  building.add(mesh(roof1, palette.textile, 'roof-1', [0, 0, 0]));
+
+  // Roof volume 2 (flat)
+  building.add(mesh(
+    new THREE.BoxGeometry(5.5, 0.2, 7.5),
+    palette.darkMetal, 'roof-2', [3, 4.1, -1],
+  ));
+
+  // Windows
+  building.add(mesh(
+    new THREE.BoxGeometry(0.8, 1.0, 0.1),
+    palette.glass, 'window-1', [-1, 2.5, 2.6],
+  ));
+  building.add(mesh(
+    new THREE.BoxGeometry(0.8, 1.0, 0.1),
+    palette.glass, 'window-2', [3, 2.0, -4.6],
+  ));
+
+  // Door
+  building.add(mesh(
+    new THREE.BoxGeometry(1.2, 2.2, 0.15),
+    palette.darkMetal, 'door', [-1, 1.6, 2.6],
+  ));
+
+  return building;
+}
+
+function createClusteredBuilding(id: string, palette: MaterialPalette): THREE.Group {
+  const cluster = new THREE.Group();
+  cluster.name = `cluster:${id}`;
+
+  // Three connected volumes at different heights
+  const volumes: Array<{ pos: [number, number, number]; size: [number, number, number]; roofH: number }> = [
+    { pos: [-4, 0, 0], size: [5, 3.5, 5], roofH: 2.0 },
+    { pos: [2, 0, -2], size: [4, 4.5, 4], roofH: 2.5 },
+    { pos: [0, 0, 4], size: [3.5, 3.0, 3.5], roofH: 1.8 },
+  ];
+
+  for (let i = 0; i < volumes.length; i++) {
+    const v = volumes[i]!;
+    // Foundation
+    cluster.add(mesh(
+      new THREE.BoxGeometry(v.size[0] + 0.4, 0.5, v.size[2] + 0.4),
+      palette.context, `foundation:${i}`, [v.pos[0], 0.25, v.pos[2]],
+    ));
+    // Walls
+    cluster.add(mesh(
+      new THREE.BoxGeometry(v.size[0], v.size[1], v.size[2]),
+      palette.groupShell, `walls:${i}`, [v.pos[0], 0.5 + v.size[1] / 2, v.pos[2]],
+    ));
+    // Roof
+    const roofGeom = new THREE.BufferGeometry();
+    const hw = v.size[0] / 2 + 0.2;
+    const hd = v.size[2] / 2 + 0.2;
+    const ry = 0.5 + v.size[1];
+    const roofPositions = new Float32Array([
+      v.pos[0] - hw, ry, v.pos[2] - hd,
+      v.pos[0] + hw, ry, v.pos[2] - hd,
+      v.pos[0], ry + v.roofH, v.pos[2],
+      v.pos[0] + hw, ry, v.pos[2] - hd,
+      v.pos[0] + hw, ry, v.pos[2] + hd,
+      v.pos[0], ry + v.roofH, v.pos[2],
+      v.pos[0] + hw, ry, v.pos[2] + hd,
+      v.pos[0] - hw, ry, v.pos[2] + hd,
+      v.pos[0], ry + v.roofH, v.pos[2],
+      v.pos[0] - hw, ry, v.pos[2] + hd,
+      v.pos[0] - hw, ry, v.pos[2] - hd,
+      v.pos[0], ry + v.roofH, v.pos[2],
+    ]);
+    roofGeom.setAttribute('position', new THREE.BufferAttribute(roofPositions, 3));
+    roofGeom.computeVertexNormals();
+    cluster.add(mesh(roofGeom, palette.textile, `roof:${i}`, [0, 0, 0]));
   }
-  return 3;
+
+  // Door on first volume
+  cluster.add(mesh(
+    new THREE.BoxGeometry(1.0, 2.0, 0.15),
+    palette.darkMetal, 'door', [-4, 1.6, 2.6],
+  ));
+
+  return cluster;
 }
 
-function populateHycatt(visible: THREE.Group, palette: MaterialPalette): number {
-  visible.userData.visualFamily = 'hycatt-campus';
+// ============================================================================
+// NEIGHBORHOOD BUILDERS - Each creates a unique district
+// ============================================================================
 
-  // Main research block
-  visible.add(
-    mesh(new THREE.BoxGeometry(8, 3.2, 6), palette.context, 'hycatt:mass:0', [-4.5, 1.6, 0]),
-    mesh(new THREE.BoxGeometry(7, 4.2, 6), palette.groupShell, 'hycatt:mass:1', [4.5, 2.1, 0]),
-  );
+function createElastocaloricsDistrict(palette: MaterialPalette): THREE.Group {
+  const district = new THREE.Group();
+  district.name = 'district:elastocalorics';
 
-  // Glass link between masses
-  visible.add(
-    mesh(new THREE.BoxGeometry(3, 1.1, 2.4), palette.glass, 'hycatt:link', [0, 2.4, 0]),
-  );
+  // Main round house (thermal research)
+  const mainHouse = createRoundHouse('elastocalorics-main', palette, 3.5, 4.5);
+  mainHouse.position.set(0, 0, 0);
+  district.add(mainHouse);
 
-  // Landmark tower (octagonal)
-  visible.add(
-    mesh(new THREE.CylinderGeometry(1.1, 1.4, 8, 8), palette.darkMetal, 'hycatt:landmark', [8.5, 4, -1]),
-  );
+  // L-shaped workshop
+  const workshop = createLShapedBuilding('elastocalorics-workshop', palette);
+  workshop.position.set(-10, 0, -4);
+  workshop.scale.set(0.8, 0.8, 0.8);
+  district.add(workshop);
 
-  // Side wing
-  visible.add(
-    mesh(new THREE.BoxGeometry(4, 2.8, 4), palette.context, 'hycatt:wing', [-8, 1.4, 2]),
-    mesh(new THREE.BoxGeometry(3.9, 0.6, 4), palette.glass, 'hycatt:wing-glazing', [-8, 2.5, 2]),
-  );
+  // Tower (observation/cooling)
+  const tower = createTower('elastocalorics-tower', palette, 3);
+  tower.position.set(8, 0, -6);
+  district.add(tower);
 
-  // Entrance canopy
-  visible.add(
-    mesh(new THREE.BoxGeometry(4, 0.15, 2), palette.darkMetal, 'hycatt:canopy', [0, 3.5, 4]),
-  );
+  // Clustered storage
+  const storage = createClusteredBuilding('elastocalorics-storage', palette);
+  storage.position.set(-5, 0, 10);
+  storage.scale.set(0.7, 0.7, 0.7);
+  district.add(storage);
 
-  return 9;
+  // Small organic house
+  const smallHouse = createOrganicBuilding('elastocalorics-small', palette);
+  smallHouse.position.set(6, 0, 8);
+  smallHouse.scale.set(0.6, 0.6, 0.6);
+  district.add(smallHouse);
+
+  return district;
 }
 
-function populateNewZema(visible: THREE.Group, palette: MaterialPalette): number {
-  visible.userData.visualFamily = 'new-zema-campus';
+function createElectroactivePolymersDistrict(palette: MaterialPalette): THREE.Group {
+  const district = new THREE.Group();
+  district.name = 'district:electroactive-polymers';
 
-  // Four volumes in an asymmetric cluster
-  visible.add(
-    mesh(new THREE.BoxGeometry(7, 2.4, 5), palette.context, 'new-zema:volume:0', [-6, 1.2, 1]),
-    mesh(new THREE.BoxGeometry(6, 3.1, 5), palette.groupShell, 'new-zema:volume:1', [0.5, 1.55, -1]),
-    mesh(new THREE.BoxGeometry(5, 2, 4), palette.context, 'new-zema:volume:2', [6, 1, 1.5]),
-    mesh(new THREE.BoxGeometry(3.5, 2.8, 3), palette.groupShell, 'new-zema:volume:3', [4, 1.4, -4]),
-  );
+  // Main organic building (polymer research)
+  const mainBuilding = createOrganicBuilding('eap-main', palette);
+  mainBuilding.position.set(0, 0, 0);
+  district.add(mainBuilding);
 
-  // Folded roof landmark
-  const roof = mesh(createFoldedRoofGeometry(), palette.sma, 'new-zema:folded-roof', [0.5, -0.3, -1]);
-  roof.scale.set(0.72, 0.72, 0.72);
-  roof.rotation.y = -0.12;
-  visible.add(roof);
+  // Round lab
+  const lab = createRoundHouse('eap-lab', palette, 2.8, 3.5);
+  lab.position.set(8, 0, -3);
+  district.add(lab);
 
-  // Glass link between volumes
-  visible.add(
-    mesh(new THREE.BoxGeometry(2.5, 1.2, 2), palette.glass, 'new-zema:link', [-2.5, 1.8, 0]),
-  );
+  // L-shaped office
+  const office = createLShapedBuilding('eap-office', palette);
+  office.position.set(-8, 0, 5);
+  office.scale.set(0.7, 0.7, 0.7);
+  district.add(office);
 
-  return 5.2;
+  // Tower storage
+  const tower = createTower('eap-tower', palette, 2);
+  tower.position.set(4, 0, 10);
+  district.add(tower);
+
+  return district;
 }
 
-function populateUds(visible: THREE.Group, palette: MaterialPalette): number {
-  visible.userData.visualFamily = 'academic-pair';
+function createSmartMaterialElectronicsDistrict(palette: MaterialPalette): THREE.Group {
+  const district = new THREE.Group();
+  district.name = 'district:smart-material-electronics';
 
-  // Three volumes for academic campus feel
-  visible.add(
-    mesh(new THREE.BoxGeometry(7, 3.8, 5), palette.context, 'uds:academic:0', [-4, 1.9, 0]),
-    mesh(new THREE.BoxGeometry(6, 5, 5), palette.groupShell, 'uds:academic:1', [4, 2.5, 0]),
-    mesh(new THREE.BoxGeometry(3.5, 2.6, 3.5), palette.context, 'uds:academic:2', [0, 1.3, -4]),
-  );
+  // Main tower (electronics research)
+  const tower = createTower('sme-tower', palette, 4);
+  tower.position.set(0, 0, 0);
+  district.add(tower);
 
-  // Glass connector
-  visible.add(
-    mesh(new THREE.BoxGeometry(2, 1.2, 2), palette.glass, 'uds:connector', [0, 1.8, -0.5]),
-  );
+  // Clustered lab
+  const lab = createClusteredBuilding('sme-lab', palette);
+  lab.position.set(-8, 0, -4);
+  district.add(lab);
 
-  return 6;
+  // Round workshop
+  const workshop = createRoundHouse('sme-workshop', palette, 3, 3);
+  workshop.position.set(7, 0, 5);
+  district.add(workshop);
+
+  // L-shaped office
+  const office = createLShapedBuilding('sme-office', palette);
+  office.position.set(-4, 0, 8);
+  office.scale.set(0.6, 0.6, 0.6);
+  district.add(office);
+
+  return district;
 }
 
-function populateHtwSaar(visible: THREE.Group, palette: MaterialPalette): number {
-  visible.userData.visualFamily = 'workshop-tower-pair';
+function createSmartTextilesDistrict(palette: MaterialPalette): THREE.Group {
+  const district = new THREE.Group();
+  district.name = 'district:smart-textiles';
 
-  // Workshop + tower + small annex
-  visible.add(
-    mesh(new THREE.BoxGeometry(9, 2.8, 6), palette.context, 'htw-saar:workshop', [-3, 1.4, 0]),
-    mesh(new THREE.BoxGeometry(3.5, 7, 3.5), palette.darkMetal, 'htw-saar:tower', [5, 3.5, 0]),
-    mesh(new THREE.BoxGeometry(3, 2, 3), palette.groupShell, 'htw-saar:annex', [5, 1, -4]),
-  );
+  // Main L-shaped building (textile research)
+  const mainBuilding = createLShapedBuilding('st-main', palette);
+  mainBuilding.position.set(0, 0, 0);
+  district.add(mainBuilding);
 
-  // Entrance canopy
-  visible.add(
-    mesh(new THREE.BoxGeometry(3, 0.12, 1.5), palette.darkMetal, 'htw-saar:canopy', [-3, 2.9, 3.5]),
-  );
+  // Organic workshop
+  const workshop = createOrganicBuilding('st-workshop', palette);
+  workshop.position.set(-9, 0, -3);
+  workshop.scale.set(0.8, 0.8, 0.8);
+  district.add(workshop);
 
-  return 7.8;
+  // Round storage
+  const storage = createRoundHouse('st-storage', palette, 2.5, 3);
+  storage.position.set(7, 0, -5);
+  district.add(storage);
+
+  // Clustered small house
+  const smallHouse = createClusteredBuilding('st-small', palette);
+  smallHouse.position.set(-4, 0, 9);
+  smallHouse.scale.set(0.6, 0.6, 0.6);
+  district.add(smallHouse);
+
+  return district;
 }
 
-function contextDimensions(entity: NeighborhoodEntity): readonly [number, number, number] {
-  if (entity.category === 'umbrella') return [16, 2.2, 10];
-  if (entity.category === 'sei-pillar') return [10, 2.6, 6.5];
-  return [8, 2.1, 5.5];
+function createShapeMemoryAlloysDistrict(palette: MaterialPalette): THREE.Group {
+  const district = new THREE.Group();
+  district.name = 'district:shape-memory-alloys';
+
+  // Main clustered building (industrial research)
+  const mainBuilding = createClusteredBuilding('sma-main', palette);
+  mainBuilding.position.set(0, 0, 0);
+  district.add(mainBuilding);
+
+  // Tower workshop
+  const tower = createTower('sma-tower', palette, 3);
+  tower.position.set(-9, 0, -4);
+  district.add(tower);
+
+  // Round lab
+  const lab = createRoundHouse('sma-lab', palette, 3, 4);
+  lab.position.set(8, 0, -3);
+  district.add(lab);
+
+  // L-shaped storage
+  const storage = createLShapedBuilding('sma-storage', palette);
+  storage.position.set(4, 0, 8);
+  storage.scale.set(0.6, 0.6, 0.6);
+  district.add(storage);
+
+  return district;
 }
 
-function populateContextBlock(visible: THREE.Group, entity: NeighborhoodEntity, palette: MaterialPalette): number {
-  visible.userData.visualFamily = 'context-block';
-  const [width, height, depth] = contextDimensions(entity);
-  visible.add(
-    mesh(new THREE.BoxGeometry(width, 0.24, depth), palette.darkMetal, 'context:plinth', [0, 0.12, 0]),
-    mesh(new THREE.BoxGeometry(width * 0.94, height, depth * 0.94), palette.context, 'context:block', [0, 0.24 + height / 2, 0]),
-  );
-  return height + 0.65;
-}
-
-function populateVisible(visible: THREE.Group, entity: NeighborhoodEntity, palette: MaterialPalette): number {
-  switch (entity.category) {
-    case 'umbrella': return 0;
-    case 'research-group': return populateResearchGroup(visible, entity, palette);
-    case 'hub': return populateCivicHub(visible, entity, palette);
-    case 'adjacent-lab': return populateSoftLab(visible, entity, palette);
-    case 'sei-pillar': return entity.id === 'hycatt'
-      ? populateHycatt(visible, palette)
-      : populateNewZema(visible, palette);
-    case 'external-partner': return entity.id === 'uds'
-      ? populateUds(visible, palette)
-      : populateHtwSaar(visible, palette);
-    default: return populateContextBlock(visible, entity, palette);
-  }
-}
-
-function collectOwnedGeometries(root: THREE.Object3D): Set<THREE.BufferGeometry> {
-  const geometries = new Set<THREE.BufferGeometry>();
-  root.traverse((child) => {
-    if (child instanceof THREE.Mesh) geometries.add(child.geometry);
-  });
-  return geometries;
-}
+// ============================================================================
+// MAIN BUILDING CREATION FUNCTIONS
+// ============================================================================
 
 export function createEntityBuilding(
   entity: NeighborhoodEntity,
@@ -517,6 +515,249 @@ export function createEntityBuilding(
     disposed: false,
   });
   return visual;
+}
+
+function populateVisible(visible: THREE.Group, entity: NeighborhoodEntity, palette: MaterialPalette): number {
+  switch (entity.category) {
+    case 'umbrella': return 0;
+    case 'research-group': return populateResearchGroup(visible, entity, palette);
+    case 'hub': return populateCivicHub(visible, entity, palette);
+    case 'adjacent-lab': return populateSoftLab(visible, entity, palette);
+    case 'sei-pillar': return entity.id === 'hycatt'
+      ? populateHycatt(visible, palette)
+      : populateNewZema(visible, palette);
+    case 'external-partner': return entity.id === 'uds'
+      ? populateUds(visible, palette)
+      : populateHtwSaar(visible, palette);
+    default: return populateContextBlock(visible, entity, palette);
+  }
+}
+
+function populateResearchGroup(visible: THREE.Group, entity: NeighborhoodEntity, palette: MaterialPalette): number {
+  visible.userData = { visualFamily: 'research-group', motif: entity.motif };
+
+  let district: THREE.Group;
+  switch (entity.motif) {
+    case 'thermal': district = createElastocaloricsDistrict(palette); break;
+    case 'polymer': district = createElectroactivePolymersDistrict(palette); break;
+    case 'electronics': district = createSmartMaterialElectronicsDistrict(palette); break;
+    case 'textile': district = createSmartTextilesDistrict(palette); break;
+    case 'sma': district = createShapeMemoryAlloysDistrict(palette); break;
+    default: district = createElastocaloricsDistrict(palette);
+  }
+  visible.add(district);
+  return 8;
+}
+
+function populateCivicHub(visible: THREE.Group, entity: NeighborhoodEntity, palette: MaterialPalette): number {
+  visible.userData = { visualFamily: 'civic-atrium' };
+
+  // Main hub - large L-shaped building
+  const hub = createLShapedBuilding('cims-hub', palette);
+  hub.scale.set(1.3, 1.2, 1.3);
+  hub.position.set(0, 0, 0);
+  visible.add(hub);
+
+  // Admin - round building
+  const admin = createRoundHouse('cims-admin', palette, 3, 4.5);
+  admin.position.set(-10, 0, -5);
+  visible.add(admin);
+
+  // Meeting hall - organic building
+  const meeting = createOrganicBuilding('cims-meeting', palette);
+  meeting.position.set(9, 0, 4);
+  meeting.scale.set(0.9, 0.9, 0.9);
+  visible.add(meeting);
+
+  return 10;
+}
+
+function populateSoftLab(visible: THREE.Group, entity: NeighborhoodEntity, palette: MaterialPalette): number {
+  visible.userData = { visualFamily: 'soft-lab' };
+
+  // Organic lab building
+  const lab = createOrganicBuilding('soft-robotics-lab', palette);
+  lab.position.set(0, 0, 0);
+  visible.add(lab);
+
+  return 6;
+}
+
+function populateHycatt(visible: THREE.Group, palette: MaterialPalette): number {
+  visible.userData = { visualFamily: 'hycatt-campus' };
+
+  // Main round house
+  const main = createRoundHouse('hycatt-main', palette, 3.5, 5);
+  main.position.set(0, 0, 0);
+  visible.add(main);
+
+  // L-shaped lab
+  const lab = createLShapedBuilding('hycatt-lab', palette);
+  lab.position.set(-9, 0, -4);
+  lab.scale.set(0.8, 0.8, 0.8);
+  visible.add(lab);
+
+  // Tower storage
+  const tower = createTower('hycatt-tower', palette, 2);
+  tower.position.set(7, 0, -5);
+  visible.add(tower);
+
+  return 8;
+}
+
+function populateNewZema(visible: THREE.Group, palette: MaterialPalette): number {
+  visible.userData = { visualFamily: 'new-zema-campus' };
+
+  // Main organic building
+  const main = createOrganicBuilding('new-zema-main', palette);
+  main.position.set(0, 0, 0);
+  visible.add(main);
+
+  // Clustered workshop
+  const workshop = createClusteredBuilding('new-zema-workshop', palette);
+  workshop.position.set(-8, 0, -3);
+  workshop.scale.set(0.8, 0.8, 0.8);
+  visible.add(workshop);
+
+  // Round office
+  const office = createRoundHouse('new-zema-office', palette, 2.5, 3);
+  office.position.set(6, 0, 5);
+  visible.add(office);
+
+  return 7;
+}
+
+function populateUds(visible: THREE.Group, palette: MaterialPalette): number {
+  visible.userData = { visualFamily: 'academic-pair' };
+
+  // Main L-shaped building
+  const main = createLShapedBuilding('uds-main', palette);
+  main.position.set(0, 0, 0);
+  visible.add(main);
+
+  // Tower library
+  const library = createTower('uds-library', palette, 3);
+  library.position.set(-9, 0, 4);
+  visible.add(library);
+
+  return 7;
+}
+
+function populateHtwSaar(visible: THREE.Group, palette: MaterialPalette): number {
+  visible.userData = { visualFamily: 'workshop-tower-pair' };
+
+  // Clustered workshop
+  const workshop = createClusteredBuilding('htw-saar-workshop', palette);
+  workshop.position.set(0, 0, 0);
+  visible.add(workshop);
+
+  // Tower
+  const tower = createTower('htw-saar-tower', palette, 4);
+  tower.position.set(-9, 0, -5);
+  visible.add(tower);
+
+  // Organic annex
+  const annex = createOrganicBuilding('htw-saar-annex', palette);
+  annex.position.set(7, 0, 6);
+  annex.scale.set(0.6, 0.6, 0.6);
+  visible.add(annex);
+
+  return 8;
+}
+
+function populateContextBlock(visible: THREE.Group, entity: NeighborhoodEntity, palette: MaterialPalette): number {
+  visible.userData = { visualFamily: 'context-block' };
+
+  // Use diverse building types for context blocks
+  const buildingTypes = ['round', 'l-shaped', 'tower', 'organic', 'clustered'];
+  const typeIndex = Math.abs(hashCode(entity.id)) % buildingTypes.length;
+  const type = buildingTypes[typeIndex];
+
+  let contextBuilding: THREE.Group;
+  switch (type) {
+    case 'round':
+      contextBuilding = createRoundHouse(entity.id, palette, 2.5, 3);
+      break;
+    case 'l-shaped':
+      contextBuilding = createLShapedBuilding(entity.id, palette);
+      contextBuilding.scale.set(0.6, 0.6, 0.6);
+      break;
+    case 'tower':
+      contextBuilding = createTower(entity.id, palette, 2);
+      break;
+    case 'organic':
+      contextBuilding = createOrganicBuilding(entity.id, palette);
+      contextBuilding.scale.set(0.5, 0.5, 0.5);
+      break;
+    case 'clustered':
+      contextBuilding = createClusteredBuilding(entity.id, palette);
+      contextBuilding.scale.set(0.5, 0.5, 0.5);
+      break;
+    default:
+      contextBuilding = createRoundHouse(entity.id, palette, 2.5, 3);
+  }
+
+  visible.add(contextBuilding);
+  return 5;
+}
+
+function hashCode(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash |= 0;
+  }
+  return hash;
+}
+
+function populateLand(visible: THREE.Group, layout: LayoutNode, palette: MaterialPalette): number {
+  visible.userData.visualFamily = 'institutional-land';
+
+  // Create flowing terrain with PlaneGeometry and vertex displacement
+  const terrainWidth = 130;
+  const terrainDepth = 100;
+  const segments = 32;
+  const surfaceGeometry = new THREE.PlaneGeometry(terrainWidth, terrainDepth, segments, segments);
+  surfaceGeometry.rotateX(-Math.PI / 2);
+
+  // Add vertex displacement for rolling hills
+  const positions = surfaceGeometry.attributes.position;
+  if (positions) {
+    for (let i = 0; i < positions.count; i++) {
+      const x = positions.getX(i);
+      const z = positions.getZ(i);
+      const height = Math.sin(x * 0.05) * Math.cos(z * 0.05) * 1.5
+        + Math.sin(x * 0.02 + z * 0.03) * 0.8;
+      positions.setY(i, height);
+    }
+    positions.needsUpdate = true;
+  }
+  surfaceGeometry.computeVertexNormals();
+
+  visible.add(mesh(surfaceGeometry, palette.ground, 'land:sei:surface', [0, -0.5, 0]));
+
+  // Add district clearings
+  for (const district of DISTRICT_LAYOUT.values()) {
+    const size = district.bounds.getSize(new THREE.Vector3());
+    const clearing = mesh(
+      new THREE.BoxGeometry(size.x, 0.15, size.z),
+      palette.clearing,
+      `clearing:${district.id}`,
+      [district.center.x - layout.position[0], 0.1, district.center.z - layout.position[2]],
+    );
+    clearing.castShadow = false;
+    visible.add(clearing);
+  }
+  return 3;
+}
+
+function collectOwnedGeometries(root: THREE.Object3D): Set<THREE.BufferGeometry> {
+  const geometries = new Set<THREE.BufferGeometry>();
+  root.traverse((child) => {
+    if (child instanceof THREE.Mesh) geometries.add(child.geometry);
+  });
+  return geometries;
 }
 
 export function disposeEntityVisual(visual: EntityVisual): void {

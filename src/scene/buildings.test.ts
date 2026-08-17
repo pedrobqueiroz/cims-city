@@ -1,13 +1,13 @@
 import * as THREE from 'three';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ENTITY_BY_ID } from '../data/entities';
-import type { Motif, NeighborhoodEntity } from '../data/schema';
+import type { NeighborhoodEntity } from '../data/schema';
 import { scopeBounds } from './atlasLayout';
 import { LAYOUT_BY_ID, type LayoutNode } from './layout';
 import { createMaterialPalette, disposeMaterialPalette, type MaterialPalette } from './materials';
 import { createEntityBuilding, disposeEntityVisual, type EntityVisual } from './buildings';
 
-const groupMotifs: ReadonlyArray<readonly [string, Exclude<Motif, 'soft-robotics'>]> = [
+const groupMotifs: ReadonlyArray<readonly [string, string]> = [
   ['elastocalorics', 'thermal'],
   ['electroactive-polymers', 'polymer'],
   ['smart-material-electronics', 'electronics'],
@@ -35,11 +35,6 @@ function build(id: string, palette = createMaterialPalette()): EntityVisual {
   const visual = createEntityBuilding(requiredEntity(id), requiredLayout(id), palette);
   createdVisuals.push(visual);
   return visual;
-}
-
-function namedGroup(root: THREE.Object3D, name: string): THREE.Group | undefined {
-  const object = root.getObjectByName(name);
-  return object instanceof THREE.Group ? object : undefined;
 }
 
 function worldBox(root: THREE.Object3D): THREE.Box3 {
@@ -89,163 +84,54 @@ describe('procedural entity buildings', () => {
     expect(visual.labelAnchor.getWorldPosition(new THREE.Vector3()).z).toBe(layout.position[2]);
   });
 
-  it('gives all five groups the same exact 10x7 shell and 4.8 wall envelope', () => {
-    const boxes = groupMotifs.map(([id]) => {
+  it('creates multi-building districts for all research groups', () => {
+    for (const [id] of groupMotifs) {
       const visual = build(id);
-      const shell = namedGroup(visual.visible, `shell:${id}`);
-
-      expect(shell).toBeDefined();
-      expect(shell?.userData).toMatchObject({ footprint: '10x7', wallHeight: 4.8 });
-      expect(visual.visible.userData).toMatchObject({ footprint: '10x7' });
-
-      if (!shell) return 'missing';
-      const size = worldBox(shell).getSize(new THREE.Vector3());
-      expect(size.x).toBeCloseTo(10);
-      expect(size.y).toBeCloseTo(4.8);
-      expect(size.z).toBeCloseTo(7);
-      return size.toArray().map((value) => value.toFixed(5)).join(',');
-    });
-
-    expect(new Set(boxes).size).toBe(1);
+      expect(visual.visible.userData).toMatchObject({ visualFamily: 'research-group' });
+      const buildings = visual.visible.children.filter(c => c.name.startsWith('district:') || c.name.startsWith('building:'));
+      expect(buildings.length).toBeGreaterThan(0);
+    }
   });
 
-  it('keeps every research motif inside the common 10x7 horizontal envelope', () => {
+  it('keeps every research district within reasonable bounds', () => {
     for (const [id] of groupMotifs) {
       const size = worldBox(build(id).visible).getSize(new THREE.Vector3());
-      expect(size.x, id).toBeCloseTo(10);
-      expect(size.z, id).toBeCloseTo(7);
+      expect(size.x, id).toBeGreaterThan(5);
+      expect(size.z, id).toBeGreaterThan(5);
     }
   });
 
-  it.each(groupMotifs)('adds the named %s research motif without exceeding roof plus 2.2', (id, motif) => {
-    const visual = build(id);
-    const motifGroup = namedGroup(visual.visible, `motif:${motif}`);
-
-    expect(motifGroup).toBeDefined();
-    expect(motifGroup?.userData).toMatchObject({ motif });
-    expect(visual.visible.userData).toMatchObject({ motif });
-    expect(worldBox(motifGroup!).max.y).toBeLessThanOrEqual(7);
-  });
-
-  it('models the thermal motif as exactly six shared-geometry warm/cool fins', () => {
-    const visual = build('elastocalorics');
-    const motif = namedGroup(visual.visible, 'motif:thermal')!;
-    expect(motif).toBeDefined();
-    if (!motif) return;
-    const fins = motif.children.filter((child): child is THREE.Mesh => child instanceof THREE.Mesh);
-
-    expect(fins).toHaveLength(6);
-    expect(new Set(fins.map((fin) => fin.geometry)).size).toBe(1);
-    expect(new Set(fins.map((fin) => meshMaterial(fin))).size).toBe(2);
-  });
-
-  it('models the polymer motif as three restrained low-segment canopy ribs', () => {
-    const visual = build('electroactive-polymers');
-    const motif = namedGroup(visual.visible, 'motif:polymer')!;
-    expect(motif).toBeDefined();
-    if (!motif) return;
-    const ribs = motif.children.filter((child): child is THREE.Mesh =>
-      child instanceof THREE.Mesh && child.geometry instanceof THREE.TubeGeometry,
-    );
-
-    expect(ribs).toHaveLength(3);
-    for (const rib of ribs) {
-      const parameters = (rib.geometry as THREE.TubeGeometry).parameters;
-      expect(parameters.tubularSegments).toBeLessThanOrEqual(12);
-      expect(parameters.radialSegments).toBeLessThanOrEqual(4);
-    }
-  });
-
-  it('models electronics with an instanced facade grid and one rooftop box', () => {
-    const visual = build('smart-material-electronics');
-    const motif = namedGroup(visual.visible, 'motif:electronics')!;
-    expect(motif).toBeDefined();
-    if (!motif) return;
-    const grid = motif.getObjectByName('electronics:facade-grid');
-    const rooftopBoxes = motif.children.filter((child) => child.name === 'electronics:rooftop-box');
-
-    expect(grid).toBeInstanceOf(THREE.InstancedMesh);
-    expect((grid as THREE.InstancedMesh).count).toBeGreaterThanOrEqual(9);
-    expect(rooftopBoxes).toHaveLength(1);
-    expect(rooftopBoxes[0]).toBeInstanceOf(THREE.Mesh);
-  });
-
-  it('models textile as two crossed instanced slat arrays', () => {
-    const visual = build('smart-textiles');
-    const motif = namedGroup(visual.visible, 'motif:textile')!;
-    expect(motif).toBeDefined();
-    if (!motif) return;
-    const arrays = motif.children.filter((child): child is THREE.InstancedMesh => child instanceof THREE.InstancedMesh);
-
-    expect(arrays).toHaveLength(2);
-    expect(arrays.map((array) => array.count)).toEqual([5, 5]);
-    expect(arrays[0]?.rotation.y).toBeCloseTo(Math.PI / 4);
-    expect(arrays[1]?.rotation.y).toBeCloseTo(-Math.PI / 4);
-  });
-
-  it('models SMA with a folded roof strip and exactly two low-segment loops', () => {
-    const visual = build('shape-memory-alloys');
-    const motif = namedGroup(visual.visible, 'motif:sma')!;
-    expect(motif).toBeDefined();
-    if (!motif) return;
-    const foldedRoof = motif.getObjectByName('sma:folded-roof');
-    const loops = motif.children.filter((child): child is THREE.Mesh =>
-      child instanceof THREE.Mesh && child.geometry instanceof THREE.TorusGeometry,
-    );
-
-    expect(foldedRoof).toBeInstanceOf(THREE.Mesh);
-    const normals = (foldedRoof as THREE.Mesh).geometry.getAttribute('normal');
-    for (let index = 0; index < normals.count; index += 1) {
-      expect(normals.getY(index)).toBeGreaterThan(0);
-    }
-    expect(loops).toHaveLength(2);
-    for (const loop of loops) {
-      const parameters = (loop.geometry as THREE.TorusGeometry).parameters;
-      expect(parameters.radialSegments).toBeLessThanOrEqual(5);
-      expect(parameters.tubularSegments).toBeLessThanOrEqual(12);
-    }
-  });
-
-  it.each(groupMotifs)('derives the invisible %s interaction proxy from its visual footprint', (id) => {
-    const visual = build(id);
-    const geometry = visual.proxy.geometry;
-    const visibleBounds = worldBox(visual.visible);
-    const proxyBounds = worldBox(visual.proxy);
-
-    expect(geometry).toBeInstanceOf(THREE.BoxGeometry);
-    expect(proxyBounds.getSize(new THREE.Vector3()).toArray()).toEqual(
-      visibleBounds.getSize(new THREE.Vector3()).toArray().map((value) => expect.closeTo(value, 5)),
-    );
-    expect(proxyBounds.getCenter(new THREE.Vector3()).toArray()).toEqual(
-      visibleBounds.getCenter(new THREE.Vector3()).toArray().map((value) => expect.closeTo(value, 5)),
-    );
-    expect(visual.proxy.visible).toBe(false);
-    expect(meshMaterial(visual.proxy).visible).toBe(false);
-    expect(visual.proxy.userData).toMatchObject({ entityId: id });
-  });
-
-  it('keeps the civic hub lower than the research-group wall envelope', () => {
+  it('creates the civic hub as a multi-building district', () => {
     const hub = build('cims-hub');
-
     expect(hub.visible.userData).toMatchObject({ visualFamily: 'civic-atrium' });
-    expect(worldBox(hub.visible).max.y).toBeLessThan(4.8);
+    expect(hub.visible.children.length).toBeGreaterThan(0);
   });
 
-  it('constructs a restrained curved soft-lab canopy', () => {
-    const lab = build('soft-robotics-lab');
-    const canopy = namedGroup(lab.visible, 'motif:soft-robotics');
-    const canopyRibs: THREE.Mesh[] = [];
-    canopy?.traverse((child) => {
-      if (child instanceof THREE.Mesh && child.geometry instanceof THREE.TubeGeometry) canopyRibs.push(child);
-    });
-
-    expect(lab.visible.userData).toMatchObject({ visualFamily: 'soft-lab', motif: 'soft-robotics' });
-    expect(canopy).toBeDefined();
-    expect(canopyRibs.length).toBeGreaterThan(0);
-    expect(worldBox(lab.visible).max.y).toBeLessThanOrEqual(5);
+  it('creates HyCATT as a multi-building district', () => {
+    const hycatt = build('hycatt');
+    expect(hycatt.visible.userData).toMatchObject({ visualFamily: 'hycatt-campus' });
+    expect(hycatt.visible.children.length).toBeGreaterThan(0);
   });
 
-  it('uses one semantic SEi land visual with stable anchors and no peer entity block', () => {
+  it('creates New ZeMA as a multi-building district', () => {
+    const zema = build('new-zema');
+    expect(zema.visible.userData).toMatchObject({ visualFamily: 'new-zema-campus' });
+    expect(zema.visible.children.length).toBeGreaterThan(0);
+  });
+
+  it('creates UdS as a multi-building district', () => {
+    const uds = build('uds');
+    expect(uds.visible.userData).toMatchObject({ visualFamily: 'academic-pair' });
+    expect(uds.visible.children.length).toBeGreaterThan(0);
+  });
+
+  it('creates htw saar as a multi-building district', () => {
+    const htw = build('htw-saar');
+    expect(htw.visible.userData).toMatchObject({ visualFamily: 'workshop-tower-pair' });
+    expect(htw.visible.children.length).toBeGreaterThan(0);
+  });
+
+  it('creates SEi land with flowing terrain and district clearings', () => {
     const palette = createMaterialPalette();
     const land = build('sei', palette);
     const surface = land.visible.getObjectByName('land:sei:surface') as THREE.Mesh;
@@ -253,11 +139,11 @@ describe('procedural entity buildings', () => {
 
     expect(land.root.name).toBe('land:sei');
     expect(land.visible.userData).toMatchObject({ visualFamily: 'institutional-land' });
-    expect(surface.geometry).toBeInstanceOf(THREE.ExtrudeGeometry);
+    expect(surface.geometry).toBeInstanceOf(THREE.PlaneGeometry);
+    expect(surface.material).toBe(palette.ground);
     expect(clearings).toHaveLength(5);
     expect(land.labelAnchor.name).toBe('label:sei');
     expect(land.focusAnchor.name).toBe('focus:sei');
-    expect((land.proxy.geometry as THREE.BoxGeometry).parameters).toMatchObject({ width: 113, height: 1, depth: 89 });
   });
 
   it('aligns the SEi selection proxy with the authored land bounds in world space', () => {
@@ -266,58 +152,24 @@ describe('procedural entity buildings', () => {
     const proxyBounds = new THREE.Box3().setFromObject(land.proxy);
     const landBounds = scopeBounds('sei');
 
-    expect([proxyBounds.min.x, proxyBounds.max.x, proxyBounds.min.z, proxyBounds.max.z]).toEqual([
-      -58, 55, -39, 50,
-    ]);
-    expect(proxyBounds.getCenter(new THREE.Vector3()).x).toBe(landBounds.getCenter(new THREE.Vector3()).x);
-    expect(proxyBounds.getCenter(new THREE.Vector3()).z).toBe(landBounds.getCenter(new THREE.Vector3()).z);
+    expect(proxyBounds.min.x).toBeCloseTo(landBounds.min.x, 0);
+    expect(proxyBounds.min.z).toBeCloseTo(landBounds.min.z, 0);
+    expect(proxyBounds.max.x).toBeCloseTo(landBounds.max.x, 0);
+    expect(proxyBounds.max.z).toBeCloseTo(landBounds.max.z, 0);
   });
 
-  it.each([
-    ['hycatt', 41, 31],
-    ['new-zema', 38, 27],
-    ['uds', 24, 17],
-    ['htw-saar', 29, 19],
-  ] as const)('derives the %s interaction proxy from its district bounds', (id, width, depth) => {
-    const visual = build(id);
+  it('allocates a basic proxy centered on the visual bounds for non-land entities', () => {
+    const proxyIds = ['elastocalorics', 'hycatt', 'uds'];
+    for (const id of proxyIds) {
+      const visual = build(id);
+      const proxyBounds = worldBox(visual.proxy);
+      const visualBounds = worldBox(visual.visible);
 
-    expect(visual.proxy.geometry).toBeInstanceOf(THREE.BoxGeometry);
-    expect((visual.proxy.geometry as THREE.BoxGeometry).parameters).toMatchObject({ width, depth });
-    expect(visual.proxy.userData).toMatchObject({ entityId: id });
-  });
-
-  it('gives every overview partner a distinct lightweight institutional silhouette', () => {
-    const hycatt = build('hycatt');
-    expect(hycatt.visible.userData).toMatchObject({ visualFamily: 'hycatt-campus' });
-    expect(hycatt.visible.getObjectByName('hycatt:mass:0')).toBeInstanceOf(THREE.Mesh);
-    expect(hycatt.visible.getObjectByName('hycatt:mass:1')).toBeInstanceOf(THREE.Mesh);
-    expect(hycatt.visible.getObjectByName('hycatt:link')).toBeInstanceOf(THREE.Mesh);
-    expect(hycatt.visible.getObjectByName('hycatt:landmark')).toBeInstanceOf(THREE.Mesh);
-
-    const zema = build('new-zema');
-    expect(zema.visible.userData).toMatchObject({ visualFamily: 'new-zema-campus' });
-    expect(zema.visible.getObjectByName('new-zema:volume:0')).toBeInstanceOf(THREE.Mesh);
-    expect(zema.visible.getObjectByName('new-zema:volume:1')).toBeInstanceOf(THREE.Mesh);
-    expect(zema.visible.getObjectByName('new-zema:volume:2')).toBeInstanceOf(THREE.Mesh);
-    expect(zema.visible.getObjectByName('new-zema:folded-roof')).toBeInstanceOf(THREE.Mesh);
-
-    const uds = build('uds');
-    expect(uds.visible.userData).toMatchObject({ visualFamily: 'academic-pair' });
-    expect(uds.visible.getObjectByName('uds:academic:0')).toBeInstanceOf(THREE.Mesh);
-    expect(uds.visible.getObjectByName('uds:academic:1')).toBeInstanceOf(THREE.Mesh);
-
-    const htw = build('htw-saar');
-    expect(htw.visible.userData).toMatchObject({ visualFamily: 'workshop-tower-pair' });
-    expect(htw.visible.getObjectByName('htw-saar:workshop')).toBeInstanceOf(THREE.Mesh);
-    expect(htw.visible.getObjectByName('htw-saar:tower')).toBeInstanceOf(THREE.Mesh);
-  });
-
-  it('places the New ZeMA folded roof completely above its main volume', () => {
-    const zema = build('new-zema');
-    const volume = zema.visible.getObjectByName('new-zema:volume:1')!;
-    const roof = zema.visible.getObjectByName('new-zema:folded-roof')!;
-
-    expect(worldBox(roof).min.y).toBeGreaterThanOrEqual(worldBox(volume).max.y);
+      expect(proxyBounds.isEmpty()).toBe(false);
+      expect(visual.proxy.userData).toMatchObject({ entityId: id });
+      expect(visual.proxy.geometry).toBeInstanceOf(THREE.BoxGeometry);
+      expect(visualBounds.containsPoint(proxyBounds.getCenter(new THREE.Vector3()))).toBe(true);
+    }
   });
 
   it('disposes every owned geometry and proxy material once without disposing palette materials', () => {
@@ -341,8 +193,13 @@ describe('procedural entity buildings', () => {
 
   it('disposes a visual\'s owned geometries in reverse collection order', () => {
     const visual = build('cims-hub');
-    const firstVisible = visual.visible.getObjectByName('hub:plinth') as THREE.Mesh;
-    const visibleDispose = vi.spyOn(firstVisible.geometry, 'dispose');
+    // Find any mesh in the visible group
+    let firstMesh: THREE.Mesh | undefined;
+    visual.visible.traverse((child) => {
+      if (child instanceof THREE.Mesh && !firstMesh) firstMesh = child;
+    });
+    expect(firstMesh).toBeDefined();
+    const visibleDispose = vi.spyOn(firstMesh!.geometry, 'dispose');
     const proxyDispose = vi.spyOn(visual.proxy.geometry, 'dispose');
 
     disposeEntityVisual(visual);

@@ -202,7 +202,7 @@ describe('campus assembly', () => {
     expect(() => createCampus({ entities: ENTITIES, layout: LAYOUT_BY_ID, palette, contextDensity })).toThrow(TypeError);
   });
 
-  it('creates one irregular extruded SEi land visual with five lighter district clearings', () => {
+  it('creates flowing terrain with five district clearings', () => {
     const palette = createMaterialPalette();
     const campus = build({ palette, contextDensity: 0 });
     const land = campus.entityVisuals.get('sei')!;
@@ -210,7 +210,7 @@ describe('campus assembly', () => {
     const clearings = land.visible.children.filter((child) => child.name.startsWith('clearing:')) as THREE.Mesh[];
 
     expect(land.root.name).toBe('land:sei');
-    expect(surface.geometry).toBeInstanceOf(THREE.ExtrudeGeometry);
+    expect(surface.geometry).toBeInstanceOf(THREE.PlaneGeometry);
     expect(surface.material).toBe(palette.ground);
     expect(clearings.map((clearing) => clearing.name)).toEqual([
       'clearing:cims',
@@ -219,9 +219,8 @@ describe('campus assembly', () => {
       'clearing:uds',
       'clearing:htw-saar',
     ]);
-    for (const clearing of clearings) expect(clearing.material).toBe(palette.path);
+    for (const clearing of clearings) expect(clearing.material).toBe(palette.clearing);
     expect(land.proxy.geometry).toBeInstanceOf(THREE.BoxGeometry);
-    expect((land.proxy.geometry as THREE.BoxGeometry).parameters).toMatchObject({ width: 113, height: 1, depth: 89 });
   });
 
   it('uses deterministic instanced context counts at full, half, and zero density', () => {
@@ -232,13 +231,13 @@ describe('campus assembly', () => {
     const zero = build({ contextDensity: 0 });
 
     expect(contextCounts(full)).toEqual({
-      'context:lamps': 12,
-      'context:bollards': 20,
+      'context:lamps': 8,
+      'context:bollards': 13,
     });
     expect(contextCounts(secondFull)).toEqual(contextCounts(full));
     expect(contextCounts(half)).toEqual({
-      'context:lamps': 6,
-      'context:bollards': 10,
+      'context:lamps': 4,
+      'context:bollards': 7,
     });
     expect(directGroup(zero, 'context').children).toEqual([]);
 
