@@ -3,53 +3,55 @@ import type { MaterialPalette } from './materials';
 
 interface ContextBuilding {
   position: readonly [number, number, number];
-  size: readonly [number, number, number];
-  material: 'context' | 'groupShell' | 'civicHub';
+  scale: number;
+  hasChimney: boolean;
+  hasPlanter: boolean;
+  hasSign: boolean;
 }
 
 const CONTEXT_BUILDINGS: readonly ContextBuilding[] = [
-  // North of CiMS (visible from default camera)
-  { position: [-30, 0, -38], size: [10, 4.5, 8], material: 'context' },
-  { position: [-18, 0, -38], size: [8, 5.5, 7], material: 'groupShell' },
-  { position: [-8, 0, -38], size: [12, 5.0, 9], material: 'context' },
-  { position: [5, 0, -38], size: [9, 4.0, 7], material: 'groupShell' },
-  { position: [18, 0, -38], size: [11, 6.0, 8], material: 'context' },
+  // North of CiMS
+  { position: [-30, 0, -38], scale: 0.8, hasChimney: true, hasPlanter: true, hasSign: true },
+  { position: [-18, 0, -38], scale: 0.9, hasChimney: false, hasPlanter: true, hasSign: false },
+  { position: [-8, 0, -38], scale: 1.0, hasChimney: true, hasPlanter: false, hasSign: true },
+  { position: [5, 0, -38], scale: 0.85, hasChimney: false, hasPlanter: true, hasSign: false },
+  { position: [18, 0, -38], scale: 0.95, hasChimney: true, hasPlanter: true, hasSign: true },
 
   // East of HyCatt/New ZeMA
-  { position: [55, 0, -10], size: [8, 4.5, 7], material: 'context' },
-  { position: [55, 0, 5], size: [10, 5.5, 8], material: 'groupShell' },
-  { position: [55, 0, 20], size: [8, 4.0, 7], material: 'context' },
-  { position: [55, 0, 35], size: [12, 5.0, 8], material: 'groupShell' },
+  { position: [55, 0, -10], scale: 0.8, hasChimney: true, hasPlanter: false, hasSign: true },
+  { position: [55, 0, 5], scale: 0.9, hasChimney: false, hasPlanter: true, hasSign: false },
+  { position: [55, 0, 20], scale: 0.85, hasChimney: true, hasPlanter: true, hasSign: true },
+  { position: [55, 0, 35], scale: 0.95, hasChimney: false, hasPlanter: false, hasSign: false },
 
   // South of htw saar
-  { position: [-15, 0, 50], size: [10, 4.5, 7], material: 'context' },
-  { position: [0, 0, 50], size: [8, 5.0, 8], material: 'groupShell' },
-  { position: [15, 0, 50], size: [12, 4.5, 9], material: 'context' },
-  { position: [30, 0, 50], size: [9, 4.0, 7], material: 'groupShell' },
+  { position: [-15, 0, 50], scale: 0.8, hasChimney: true, hasPlanter: true, hasSign: false },
+  { position: [0, 0, 50], scale: 0.9, hasChimney: false, hasPlanter: true, hasSign: true },
+  { position: [15, 0, 50], scale: 1.0, hasChimney: true, hasPlanter: false, hasSign: false },
+  { position: [30, 0, 50], scale: 0.85, hasChimney: false, hasPlanter: true, hasSign: true },
 
   // West of UdS
-  { position: [-58, 0, 20], size: [8, 5.0, 7], material: 'context' },
-  { position: [-58, 0, 35], size: [10, 6.0, 8], material: 'groupShell' },
-  { position: [-58, 0, 48], size: [8, 4.0, 7], material: 'context' },
+  { position: [-58, 0, 20], scale: 0.8, hasChimney: true, hasPlanter: true, hasSign: false },
+  { position: [-58, 0, 35], scale: 0.9, hasChimney: false, hasPlanter: false, hasSign: true },
+  { position: [-58, 0, 48], scale: 0.85, hasChimney: true, hasPlanter: true, hasSign: false },
 
-  // Between districts (closer to campus, more visible)
-  { position: [0, 0, -25], size: [8, 5.0, 7], material: 'context' },
-  { position: [15, 0, -20], size: [7, 5.5, 6], material: 'groupShell' },
-  { position: [-15, 0, 15], size: [8, 4.5, 7], material: 'context' },
-  { position: [20, 0, 25], size: [7, 4.0, 6], material: 'groupShell' },
-  { position: [-25, 0, 25], size: [8, 5.0, 7], material: 'context' },
-  { position: [35, 0, -15], size: [7, 4.5, 6], material: 'groupShell' },
-  { position: [-35, 0, -15], size: [8, 4.5, 7], material: 'context' },
+  // Between districts
+  { position: [0, 0, -25], scale: 0.8, hasChimney: true, hasPlanter: true, hasSign: true },
+  { position: [15, 0, -20], scale: 0.85, hasChimney: false, hasPlanter: true, hasSign: false },
+  { position: [-15, 0, 15], scale: 0.9, hasChimney: true, hasPlanter: false, hasSign: true },
+  { position: [20, 0, 25], scale: 0.8, hasChimney: false, hasPlanter: true, hasSign: false },
+  { position: [-25, 0, 25], scale: 0.85, hasChimney: true, hasPlanter: true, hasSign: true },
+  { position: [35, 0, -15], scale: 0.9, hasChimney: false, hasPlanter: false, hasSign: false },
+  { position: [-35, 0, -15], scale: 0.8, hasChimney: true, hasPlanter: true, hasSign: true },
 
-  // Far context (beyond SEI land)
-  { position: [-65, 0, -20], size: [10, 5.5, 8], material: 'context' },
-  { position: [-65, 0, 0], size: [8, 4.0, 7], material: 'groupShell' },
-  { position: [62, 0, -25], size: [12, 5.0, 9], material: 'context' },
-  { position: [62, 0, 10], size: [8, 5.5, 7], material: 'groupShell' },
-  { position: [0, 0, -48], size: [10, 4.5, 8], material: 'context' },
-  { position: [20, 0, -48], size: [8, 5.0, 7], material: 'groupShell' },
-  { position: [40, 0, 55], size: [10, 4.5, 8], material: 'context' },
-  { position: [-20, 0, 55], size: [8, 5.0, 7], material: 'groupShell' },
+  // Far context
+  { position: [-65, 0, -20], scale: 0.9, hasChimney: true, hasPlanter: false, hasSign: true },
+  { position: [-65, 0, 0], scale: 0.8, hasChimney: false, hasPlanter: true, hasSign: false },
+  { position: [62, 0, -25], scale: 1.0, hasChimney: true, hasPlanter: true, hasSign: true },
+  { position: [62, 0, 10], scale: 0.85, hasChimney: false, hasPlanter: false, hasSign: false },
+  { position: [0, 0, -48], scale: 0.9, hasChimney: true, hasPlanter: true, hasSign: true },
+  { position: [20, 0, -48], scale: 0.8, hasChimney: false, hasPlanter: true, hasSign: false },
+  { position: [40, 0, 55], scale: 0.85, hasChimney: true, hasPlanter: false, hasSign: true },
+  { position: [-20, 0, 55], scale: 0.9, hasChimney: false, hasPlanter: true, hasSign: false },
 ];
 
 interface StreetSegment {
@@ -83,37 +85,13 @@ export function createUrbanFabric(
   root.name = 'urban-fabric';
   if (density <= 0) return root;
 
-  const materialMap: Record<string, THREE.MeshStandardMaterial> = {
-    context: palette.context,
-    groupShell: palette.groupShell,
-    civicHub: palette.civicHub,
-  };
-
   const buildingsToShow = Math.round(CONTEXT_BUILDINGS.length * density);
   for (let i = 0; i < buildingsToShow; i++) {
     const def = CONTEXT_BUILDINGS[i]!;
-    const material = materialMap[def.material] ?? palette.context;
-
-    const plinth = new THREE.Mesh(
-      new THREE.BoxGeometry(def.size[0], 0.2, def.size[2]),
-      palette.darkMetal,
-    );
-    plinth.position.set(def.position[0], 0.1, def.position[2]);
-    plinth.castShadow = true;
-    plinth.receiveShadow = true;
-
-    const walls = new THREE.Mesh(
-      new THREE.BoxGeometry(def.size[0] * 0.94, def.size[1], def.size[2] * 0.94),
-      material,
-    );
-    walls.position.set(def.position[0], 0.2 + def.size[1] / 2, def.position[2]);
-    walls.castShadow = true;
-    walls.receiveShadow = true;
-
-    const group = new THREE.Group();
-    group.name = `context-building:${i}`;
-    group.add(plinth, walls);
-    root.add(group);
+    const house = createContextHouse(i, palette, def);
+    house.position.set(def.position[0], 0, def.position[2]);
+    house.scale.set(def.scale, def.scale, def.scale);
+    root.add(house);
   }
 
   // Street segments
@@ -142,6 +120,79 @@ export function createUrbanFabric(
   const fabric: THREE.Group = root;
   disposedFabric.add(fabric);
   return fabric;
+}
+
+function createContextHouse(index: number, palette: MaterialPalette, options: ContextBuilding): THREE.Group {
+  const house = new THREE.Group();
+  house.name = `context-house:${index}`;
+
+  // Foundation
+  house.add(
+    createMesh(new THREE.CylinderGeometry(2.8, 3.0, 0.5, 8), palette.context, 'house:foundation', [0, 0.25, 0]),
+  );
+
+  // Main walls (cylinder body)
+  house.add(
+    createMesh(new THREE.CylinderGeometry(2.6, 2.6, 3.5, 8), palette.groupShell, 'house:walls', [0, 2.0, 0]),
+  );
+
+  // Roof (cone)
+  house.add(
+    createMesh(new THREE.ConeGeometry(3.2, 2.0, 8), palette.textile, 'house:roof', [0, 5.0, 0]),
+  );
+
+  // Door
+  house.add(
+    createMesh(new THREE.BoxGeometry(1.0, 1.8, 0.12), palette.darkMetal, 'house:door', [0, 1.5, 2.55]),
+  );
+
+  // Windows (2)
+  for (let i = 0; i < 2; i++) {
+    const angle = (i * Math.PI) / 2;
+    const x = Math.cos(angle) * 2.5;
+    const z = Math.sin(angle) * 2.5;
+    house.add(
+      createMesh(new THREE.BoxGeometry(0.6, 0.8, 0.08), palette.glass, `house:window:${i}`, [x, 2.5, z]),
+    );
+  }
+
+  // Chimney (optional)
+  if (options.hasChimney) {
+    house.add(
+      createMesh(new THREE.CylinderGeometry(0.25, 0.3, 1.5, 6), palette.context, 'house:chimney', [1.8, 5.0, 0]),
+    );
+  }
+
+  // Planter (optional)
+  if (options.hasPlanter) {
+    house.add(
+      createMesh(new THREE.CylinderGeometry(0.35, 0.3, 0.4, 6), palette.textile, 'house:planter', [2.2, 0.8, 2.0]),
+      createMesh(new THREE.SphereGeometry(0.25, 6, 4), palette.thermalWarm, 'house:flower', [2.2, 1.2, 2.0]),
+    );
+  }
+
+  // Sign (optional)
+  if (options.hasSign) {
+    house.add(
+      createMesh(new THREE.BoxGeometry(0.8, 0.3, 0.04), palette.selectionEdge, 'house:sign', [0, 3.5, 2.7]),
+    );
+  }
+
+  return house;
+}
+
+function createMesh(
+  geometry: THREE.BufferGeometry,
+  material: THREE.Material,
+  name: string,
+  position: readonly [number, number, number],
+): THREE.Mesh {
+  const result = new THREE.Mesh(geometry, material);
+  result.name = name;
+  result.position.set(...position);
+  result.castShadow = true;
+  result.receiveShadow = true;
+  return result;
 }
 
 export function disposeUrbanFabric(fabric: THREE.Group): void {

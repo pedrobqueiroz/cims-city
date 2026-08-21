@@ -36,8 +36,48 @@ export interface SceneRuntime {
 export function createSceneRuntime(container: HTMLElement, options: RuntimeOptions): SceneRuntime {
   const scene = new THREE.Scene();
   scene.name = 'scene:neighborhood';
-  const sceneBackground = new THREE.Color('#dce3df');
+  // Neutral grey sky
+  const sceneBackground = new THREE.Color('#e0e8e4');
   scene.background = sceneBackground;
+
+  // Add gradient sky sphere (cool blue/white)
+  const skyGeometry = new THREE.SphereGeometry(200, 32, 32);
+  const skyMaterial = new THREE.ShaderMaterial({
+    uniforms: {
+      topColor: { value: new THREE.Color('#c0d8e8') },    // cool blue
+      middleColor: { value: new THREE.Color('#d8e0e4') }, // neutral grey
+      bottomColor: { value: new THREE.Color('#e0e4e8') }, // light grey
+    },
+    vertexShader: `
+      varying vec3 vWorldPosition;
+      void main() {
+        vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+        vWorldPosition = worldPosition.xyz;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 topColor;
+      uniform vec3 middleColor;
+      uniform vec3 bottomColor;
+      varying vec3 vWorldPosition;
+      void main() {
+        float height = normalize(vWorldPosition).y;
+        vec3 color;
+        if (height > 0.0) {
+          color = mix(middleColor, topColor, height);
+        } else {
+          color = mix(middleColor, bottomColor, -height);
+        }
+        gl_FragColor = vec4(color, 1.0);
+      }
+    `,
+    side: THREE.BackSide,
+    depthWrite: false,
+  });
+  const sky = new THREE.Mesh(skyGeometry, skyMaterial);
+  sky.name = 'sky:gradient';
+  scene.add(sky);
 
   const initialRect = container.getBoundingClientRect();
   const initialWidth = Math.max(1, initialRect.width);

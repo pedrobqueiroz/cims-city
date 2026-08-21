@@ -21,6 +21,25 @@ export function createTree(type: TreeType, palette: MaterialPalette): THREE.Grou
   trunk.name = 'trunk';
   tree.add(trunk);
 
+  // Branches (2-3 small cylinders)
+  for (let i = 0; i < 2; i++) {
+    const angle = (i * Math.PI * 0.8) + Math.PI * 0.2;
+    const branch = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.05, 0.08, 1.2, 4),
+      palette.darkMetal,
+    );
+    branch.position.set(
+      Math.cos(angle) * 0.4,
+      trunkHeight * 0.6 + i * 0.5,
+      Math.sin(angle) * 0.4,
+    );
+    branch.rotation.z = Math.cos(angle) * 0.5;
+    branch.rotation.x = Math.sin(angle) * 0.3;
+    branch.castShadow = true;
+    branch.name = `branch:${i}`;
+    tree.add(branch);
+  }
+
   if (type === 'deciduous') {
     // Spherical crown (icosahedron for low-poly look)
     const crown = new THREE.Mesh(
@@ -32,6 +51,23 @@ export function createTree(type: TreeType, palette: MaterialPalette): THREE.Grou
     crown.receiveShadow = true;
     crown.name = 'crown';
     tree.add(crown);
+
+    // Fruits (small spheres on crown)
+    for (let i = 0; i < 3; i++) {
+      const angle = (i * Math.PI * 2) / 3;
+      const fruit = new THREE.Mesh(
+        new THREE.SphereGeometry(0.15, 6, 4),
+        palette.thermalWarm,
+      );
+      fruit.position.set(
+        Math.cos(angle) * 2.5,
+        trunkHeight + 3.5,
+        Math.sin(angle) * 2.5,
+      );
+      fruit.castShadow = true;
+      fruit.name = `fruit:${i}`;
+      tree.add(fruit);
+    }
   } else {
     // Conical crown (cone)
     const crown = new THREE.Mesh(
@@ -43,6 +79,23 @@ export function createTree(type: TreeType, palette: MaterialPalette): THREE.Grou
     crown.receiveShadow = true;
     crown.name = 'crown';
     tree.add(crown);
+
+    // Pine cones (small spheres)
+    for (let i = 0; i < 2; i++) {
+      const angle = (i * Math.PI) + Math.PI * 0.5;
+      const pineCone = new THREE.Mesh(
+        new THREE.SphereGeometry(0.12, 6, 4),
+        palette.textile,
+      );
+      pineCone.position.set(
+        Math.cos(angle) * 1.5,
+        trunkHeight + 1.5,
+        Math.sin(angle) * 1.5,
+      );
+      pineCone.castShadow = true;
+      pineCone.name = `pinecone:${i}`;
+      tree.add(pineCone);
+    }
   }
 
   disposedVegetation.add(tree);
@@ -53,7 +106,7 @@ export function createBush(palette: MaterialPalette): THREE.Group {
   const bush = new THREE.Group();
   bush.name = 'bush';
 
-  // Three spheres clustered together
+  // Main bush body (three spheres clustered together)
   const positions: Array<[number, number, number]> = [
     [0, 0.8, 0],
     [0.8, 0.6, 0.6],
@@ -70,6 +123,25 @@ export function createBush(palette: MaterialPalette): THREE.Group {
     sphere.receiveShadow = true;
     sphere.name = `bush:lobe:${i}`;
     bush.add(sphere);
+  }
+
+  // Flowers (small colored spheres)
+  const flowerPositions: Array<[number, number, number, THREE.Material]> = [
+    [0.5, 1.2, 0.3, palette.thermalWarm],
+    [-0.3, 1.1, 0.6, palette.thermalCool],
+    [0.1, 1.3, -0.4, palette.polymer],
+  ];
+
+  for (let i = 0; i < flowerPositions.length; i++) {
+    const [x, y, z, material] = flowerPositions[i]!;
+    const flower = new THREE.Mesh(
+      new THREE.SphereGeometry(0.12, 6, 4),
+      material,
+    );
+    flower.position.set(x, y, z);
+    flower.castShadow = true;
+    flower.name = `flower:${i}`;
+    bush.add(flower);
   }
 
   disposedVegetation.add(bush);

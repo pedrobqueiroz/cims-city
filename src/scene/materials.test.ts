@@ -11,32 +11,32 @@ function relativeLuminance(hex: string): number {
 }
 
 const roleColors = {
-  ground: '#d7ddd8',
-  path: '#b7bcb8',
-  groupShell: '#e5dfd4',
-  civicHub: '#d8c9b4',
-  darkMetal: '#28343b',
-  glass: '#6f8994',
-  thermalWarm: '#d9754f',
-  thermalCool: '#4d91a7',
-  polymer: '#8a719b',
-  electronics: '#4f718e',
-  textile: '#a47b5d',
-  sma: '#71886d',
-  context: '#aeb7b4',
-  selectionEdge: '#f4c45e',
-  land: '#c8d7b0',
-  clearing: '#eae8df',
+  ground: '#d0d4cc',
+  path: '#b8bcb4',
+  groupShell: '#e0ddd5',
+  civicHub: '#d8d4cc',
+  darkMetal: '#3a3a3a',
+  glass: '#a0c0d0',
+  thermalWarm: '#e87840',
+  thermalCool: '#60b0c0',
+  polymer: '#c890d0',
+  electronics: '#7090b0',
+  textile: '#c89060',
+  sma: '#90b080',
+  context: '#c0bdb5',
+  selectionEdge: '#f0a050',
+  land: '#b8c8a0',
+  clearing: '#e0dcd4',
   districtAccent: '#8b9e6b',
-  routeActive: '#d4793b',
-  routePreview: '#e8a665',
-  routeMuted: '#9e9a90',
-  pavement: '#c2c5be',
-  sidewalk: '#e0ddd5',
-  curb: '#8a8d86',
-  grass: '#a8c490',
-  road: '#7a7d76',
-  landDark: '#98b878',
+  routeActive: '#e08040',
+  routePreview: '#f0b060',
+  routeMuted: '#a0a098',
+  pavement: '#c0bdb5',
+  sidewalk: '#d8d4cc',
+  curb: '#a0a098',
+  grass: '#90b870',
+  road: '#8a8a82',
+  landDark: '#80a060',
 } as const;
 
 const roles = Object.keys(roleColors) as Array<keyof MaterialPalette>;
@@ -45,12 +45,12 @@ const textureProperties = [
   'displacementMap', 'roughnessMap', 'metalnessMap', 'alphaMap', 'envMap',
 ] as const;
 
-describe('shared PBR material palette', () => {
-  it('provides every semantic role as a distinctly colored MeshStandardMaterial', () => {
+describe('Hateno Village material palette', () => {
+  it('provides every semantic role as a distinctly colored MeshToonMaterial', () => {
     const palette = createMaterialPalette();
 
     for (const role of roles) {
-      expect(palette[role], role).toBeInstanceOf(THREE.MeshStandardMaterial);
+      expect(palette[role], role).toBeInstanceOf(THREE.MeshToonMaterial);
       expect(`#${palette[role].color.getHexString()}`, role).toBe(roleColors[role]);
     }
 
@@ -69,22 +69,8 @@ describe('shared PBR material palette', () => {
     const palette = createMaterialPalette();
 
     expect(palette.glass.transparent).toBe(true);
-    expect(palette.glass.opacity).toBe(0.42);
-    expect(palette.glass.roughness).toBe(0.18);
-    expect(palette.glass.metalness).toBe(0);
+    expect(palette.glass.opacity).toBe(0.55);
     expect(palette.glass.depthWrite).toBe(false);
-
-    disposeMaterialPalette(palette);
-  });
-
-  it('uses matte architectural shells and the authored dark-metal properties', () => {
-    const palette = createMaterialPalette();
-
-    expect(palette.groupShell.roughness).toBeGreaterThanOrEqual(0.65);
-    expect(palette.civicHub.roughness).toBeGreaterThanOrEqual(0.65);
-    expect(palette.context.roughness).toBeGreaterThanOrEqual(0.65);
-    expect(palette.darkMetal.roughness).toBe(0.34);
-    expect(palette.darkMetal.metalness).toBe(0.72);
 
     disposeMaterialPalette(palette);
   });
@@ -93,7 +79,10 @@ describe('shared PBR material palette', () => {
     const palette = createMaterialPalette();
 
     for (const material of Object.values(palette)) {
-      for (const property of textureProperties) expect(material[property], property).toBeNull();
+      for (const property of textureProperties) {
+        const value = material[property];
+        expect(value == null, property).toBe(true);
+      }
     }
 
     disposeMaterialPalette(palette);

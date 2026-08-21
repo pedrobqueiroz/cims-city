@@ -46,13 +46,13 @@ describe('vegetation', () => {
     disposeMaterialPalette(palette);
   });
 
-  it('creates a bush with multiple lobes', () => {
+  it('creates a bush with multiple lobes and flowers', () => {
     const palette = createMaterialPalette();
     const bush = createBush(palette);
     groups.push(bush);
 
     expect(bush.name).toBe('bush');
-    expect(bush.children.length).toBe(3);
+    expect(bush.children.length).toBe(6); // 3 lobes + 3 flowers
 
     disposeMaterialPalette(palette);
   });

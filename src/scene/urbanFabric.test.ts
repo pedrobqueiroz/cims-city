@@ -10,14 +10,14 @@ afterEach(() => {
 });
 
 describe('urban fabric', () => {
-  it('creates context buildings and streets', () => {
+  it('creates context houses and streets', () => {
     const palette = createMaterialPalette();
     const fabric = createUrbanFabric(palette, 1);
     groups.push(fabric);
 
-    const buildings = fabric.children.filter(c => c.name.startsWith('context-building'));
+    const houses = fabric.children.filter(c => c.name.startsWith('context-house'));
     const streets = fabric.children.filter(c => c.name.startsWith('street'));
-    expect(buildings.length).toBeGreaterThan(0);
+    expect(houses.length).toBeGreaterThan(0);
     expect(streets.length).toBeGreaterThan(0);
 
     disposeMaterialPalette(palette);

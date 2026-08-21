@@ -1,73 +1,72 @@
 import * as THREE from 'three';
 
 export interface MaterialPalette {
-  ground: THREE.MeshStandardMaterial;
-  path: THREE.MeshStandardMaterial;
-  groupShell: THREE.MeshStandardMaterial;
-  civicHub: THREE.MeshStandardMaterial;
-  darkMetal: THREE.MeshStandardMaterial;
-  glass: THREE.MeshStandardMaterial;
-  thermalWarm: THREE.MeshStandardMaterial;
-  thermalCool: THREE.MeshStandardMaterial;
-  polymer: THREE.MeshStandardMaterial;
-  electronics: THREE.MeshStandardMaterial;
-  textile: THREE.MeshStandardMaterial;
-  sma: THREE.MeshStandardMaterial;
-  context: THREE.MeshStandardMaterial;
-  selectionEdge: THREE.MeshStandardMaterial;
-  land: THREE.MeshStandardMaterial;
-  clearing: THREE.MeshStandardMaterial;
-  districtAccent: THREE.MeshStandardMaterial;
-  routeActive: THREE.MeshStandardMaterial;
-  routePreview: THREE.MeshStandardMaterial;
-  routeMuted: THREE.MeshStandardMaterial;
-  pavement: THREE.MeshStandardMaterial;
-  sidewalk: THREE.MeshStandardMaterial;
-  curb: THREE.MeshStandardMaterial;
-  grass: THREE.MeshStandardMaterial;
-  road: THREE.MeshStandardMaterial;
-  landDark: THREE.MeshStandardMaterial;
+  ground: THREE.MeshToonMaterial;
+  path: THREE.MeshToonMaterial;
+  groupShell: THREE.MeshToonMaterial;
+  civicHub: THREE.MeshToonMaterial;
+  darkMetal: THREE.MeshToonMaterial;
+  glass: THREE.MeshToonMaterial;
+  thermalWarm: THREE.MeshToonMaterial;
+  thermalCool: THREE.MeshToonMaterial;
+  polymer: THREE.MeshToonMaterial;
+  electronics: THREE.MeshToonMaterial;
+  textile: THREE.MeshToonMaterial;
+  sma: THREE.MeshToonMaterial;
+  context: THREE.MeshToonMaterial;
+  selectionEdge: THREE.MeshToonMaterial;
+  land: THREE.MeshToonMaterial;
+  clearing: THREE.MeshToonMaterial;
+  districtAccent: THREE.MeshToonMaterial;
+  routeActive: THREE.MeshToonMaterial;
+  routePreview: THREE.MeshToonMaterial;
+  routeMuted: THREE.MeshToonMaterial;
+  pavement: THREE.MeshToonMaterial;
+  sidewalk: THREE.MeshToonMaterial;
+  curb: THREE.MeshToonMaterial;
+  grass: THREE.MeshToonMaterial;
+  road: THREE.MeshToonMaterial;
+  landDark: THREE.MeshToonMaterial;
 }
 
 const disposedPalettes = new WeakSet<MaterialPalette>();
 
 function createMaterial(
   color: string,
-  roughness: number,
-  metalness = 0,
-  options: Partial<THREE.MeshStandardMaterialParameters> = {},
-): THREE.MeshStandardMaterial {
-  return new THREE.MeshStandardMaterial({ color, roughness, metalness, ...options });
+  options: Partial<THREE.MeshToonMaterialParameters> = {},
+): THREE.MeshToonMaterial {
+  return new THREE.MeshToonMaterial({ color, ...options });
 }
 
 export function createMaterialPalette(): MaterialPalette {
   return {
-    ground: createMaterial('#d7ddd8', 0.78),
-    path: createMaterial('#b7bcb8', 0.76),
-    groupShell: createMaterial('#e5dfd4', 0.78),
-    civicHub: createMaterial('#d8c9b4', 0.74),
-    darkMetal: createMaterial('#28343b', 0.34, 0.72),
-    glass: createMaterial('#6f8994', 0.18, 0, { transparent: true, opacity: 0.42, depthWrite: false }),
-    thermalWarm: createMaterial('#d9754f', 0.52, 0.12),
-    thermalCool: createMaterial('#4d91a7', 0.52, 0.12),
-    polymer: createMaterial('#8a719b', 0.58, 0.08),
-    electronics: createMaterial('#4f718e', 0.48, 0.18),
-    textile: createMaterial('#a47b5d', 0.62, 0.04),
-    sma: createMaterial('#71886d', 0.54, 0.18),
-    context: createMaterial('#aeb7b4', 0.76),
-    selectionEdge: createMaterial('#f4c45e', 0.5, 0.1),
-    land: createMaterial('#c8d7b0', 0.72),
-    clearing: createMaterial('#eae8df', 0.76),
-    districtAccent: createMaterial('#8b9e6b', 0.58, 0.06),
-    routeActive: createMaterial('#d4793b', 0.5, 0.1),
-    routePreview: createMaterial('#e8a665', 0.52, 0.08),
-    routeMuted: createMaterial('#9e9a90', 0.74),
-    pavement: createMaterial('#c2c5be', 0.78),
-    sidewalk: createMaterial('#e0ddd5', 0.76),
-    curb: createMaterial('#8a8d86', 0.7),
-    grass: createMaterial('#a8c490', 0.82),
-    road: createMaterial('#7a7d76', 0.74),
-    landDark: createMaterial('#98b878', 0.76),
+    // Neutral palette with engineering accent colors
+    ground: createMaterial('#899c76'),           // neutral grey-green ground
+    path: createMaterial('#b8bcb4'),             // neutral path
+    groupShell: createMaterial('#e0ddd5'),       // neutral light grey buildings
+    civicHub: createMaterial('#d8d4cc'),         // neutral grey hub
+    darkMetal: createMaterial('#3a3a3a'),        // neutral dark grey metal
+    glass: createMaterial('#a0c0d0', { transparent: true, opacity: 0.55, depthWrite: false }),  // neutral blue-grey glass
+    thermalWarm: createMaterial('#e87840'),      // warm orange (accent)
+    thermalCool: createMaterial('#60b0c0'),      // teal (accent)
+    polymer: createMaterial('#c890d0'),          // purple (accent)
+    electronics: createMaterial('#7090b0'),      // blue-grey (accent)
+    textile: createMaterial('#c89060'),          // brown (accent)
+    sma: createMaterial('#90b080'),              // sage green (accent)
+    context: createMaterial('#c0bdb5'),          // neutral grey context
+    selectionEdge: createMaterial('#f0a050'),    // warm orange selection
+    land: createMaterial('#b8c8a0'),             // neutral green land
+    clearing: createMaterial('#e0dcd4'),         // neutral cream clearing
+    districtAccent: createMaterial('#8b9e6b'),   // green accent
+    routeActive: createMaterial('#e08040'),      // orange route
+    routePreview: createMaterial('#f0b060'),     // golden preview
+    routeMuted: createMaterial('#a0a098'),       // neutral grey muted
+    pavement: createMaterial('#c0bdb5'),         // neutral pavement
+    sidewalk: createMaterial('#d8d4cc'),         // neutral light sidewalk
+    curb: createMaterial('#a0a098'),             // neutral curb
+    grass: createMaterial('#90b870'),            // green grass
+    road: createMaterial('#8a8a82'),             // neutral road
+    landDark: createMaterial('#80a060'),         // dark green
   };
 }
 

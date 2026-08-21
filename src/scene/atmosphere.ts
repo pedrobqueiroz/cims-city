@@ -7,7 +7,8 @@ export interface Atmosphere {
 const disposedAtmospheres = new WeakSet<Atmosphere>();
 
 export function createAtmosphere(scene: THREE.Scene): Atmosphere {
-  const fog = new THREE.FogExp2('#b8c4bf', 0.012);
+  // Neutral grey fog for atmospheric depth
+  const fog = new THREE.FogExp2('#e0e8e4', 0.003);
   scene.fog = fog;
 
   const atmosphere: Atmosphere = {

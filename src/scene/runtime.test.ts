@@ -177,8 +177,20 @@ describe('scene runtime', () => {
     expect(renderer.shadowMap.enabled).toBe(true);
     expect(renderer.shadowMap.type).toBe(THREE.PCFSoftShadowMap);
     expect(runtime.scene.background).toBeInstanceOf(THREE.Color);
-    expect((runtime.scene.background as THREE.Color).getStyle()).toBe('rgb(220,227,223)');
+    expect((runtime.scene.background as THREE.Color).getStyle()).toBe('rgb(224,232,228)');
     expect(renderer.domElement.dataset.shadowMap).toBe('enabled');
+
+    runtime.dispose();
+  });
+
+  it('adds a gradient sky sphere to the scene', () => {
+    const { runtime } = createHarness();
+
+    const sky = runtime.scene.getObjectByName('sky:gradient');
+    expect(sky).toBeDefined();
+    expect(sky).toBeInstanceOf(THREE.Mesh);
+    expect((sky as THREE.Mesh).geometry).toBeInstanceOf(THREE.SphereGeometry);
+    expect((sky as THREE.Mesh).material).toBeInstanceOf(THREE.ShaderMaterial);
 
     runtime.dispose();
   });

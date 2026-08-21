@@ -253,8 +253,8 @@ describe('CameraController', () => {
     expect(controller.state).toEqual({ mode: 'context', entityId: 'sei' });
     expect(controller.isTransitioning).toBe(false);
     expectVector(orbit.target, seiFocus.target);
-    expectVector(camera.position, localPosition(seiFocus.target, 58).toArray());
-    expect(camera.position.distanceTo(orbit.target)).toBeCloseTo(58, 10);
+    expectVector(camera.position, localPosition(seiFocus.target, 120).toArray());
+    expect(camera.position.distanceTo(orbit.target)).toBeCloseTo(120, 10);
     expect(orbit.minDistance).toBe(24);
     expect(orbit.maxDistance).toBe(120);
     expect(updates.count).toBe(constructorUpdates + 1);
@@ -363,8 +363,8 @@ describe('CameraController', () => {
     expect(controller.state).toEqual({ mode: 'context', entityId: 'sei' });
     expect(controller.isTransitioning).toBe(false);
     expectVector(orbit.target, seiFocus.target);
-    expectVector(camera.position, localPosition(seiFocus.target, 58).toArray());
-    expect(camera.position.distanceTo(orbit.target)).toBeCloseTo(58, 10);
+    expectVector(camera.position, localPosition(seiFocus.target, 120).toArray());
+    expect(camera.position.distanceTo(orbit.target)).toBeCloseTo(120, 10);
     expect(orbit.minDistance).toBe(24);
     expect(orbit.maxDistance).toBe(120);
     expect(updates.count).toBe(constructorUpdates + 1);
